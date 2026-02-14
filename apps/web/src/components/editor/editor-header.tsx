@@ -114,7 +114,7 @@ function ProjectDropdown() {
 							alt="Project thumbnail"
 							width={32}
 							height={32}
-							className="invert dark:invert-0 size-5"
+							className="dark:invert size-5"
 						/>
 					</Button>
 				</DropdownMenuTrigger>
