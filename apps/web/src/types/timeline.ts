@@ -18,6 +18,7 @@ interface BaseTrack {
 export interface VideoTrack extends BaseTrack {
 	type: "video";
 	elements: (VideoElement | ImageElement)[];
+	transitions?: TrackTransition[];
 	isMain: boolean;
 	muted: boolean;
 	hidden: boolean;
@@ -50,6 +51,30 @@ export interface Transform {
 		y: number;
 	};
 	rotate: number;
+}
+
+// ---- Transitions ----
+
+export type TransitionType =
+	| "fade"
+	| "dissolve"
+	| "wipe-left"
+	| "wipe-right"
+	| "wipe-up"
+	| "wipe-down"
+	| "slide-left"
+	| "slide-right"
+	| "slide-up"
+	| "slide-down"
+	| "zoom-in"
+	| "zoom-out";
+
+export interface TrackTransition {
+	id: string;
+	type: TransitionType;
+	duration: number;
+	fromElementId: string;
+	toElementId: string;
 }
 
 interface BaseAudioElement extends BaseTimelineElement {

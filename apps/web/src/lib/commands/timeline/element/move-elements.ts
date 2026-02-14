@@ -4,6 +4,7 @@ import type {
 	TimelineTrack,
 	TimelineElement,
 	TrackType,
+	VideoTrack,
 } from "@/types/timeline";
 import {
 	buildEmptyTrack,
@@ -11,6 +12,7 @@ import {
 	validateElementTrackCompatibility,
 	enforceMainTrackStart,
 } from "@/lib/timeline/track-utils";
+import { cleanupTransitionsForTrack } from "@/lib/timeline/transition-utils";
 
 export class MoveElementCommand extends Command {
 	private savedState: TimelineTrack[] | null = null;
@@ -122,6 +124,12 @@ export class MoveElementCommand extends Command {
 				);
 			}
 		}
+
+		// remove stale transitions after element move
+		updatedTracks = updatedTracks.map((track) => {
+			if (track.type !== "video") return track;
+			return cleanupTransitionsForTrack({ track: track as VideoTrack });
+		}) as TimelineTrack[];
 
 		editor.timeline.updateTracks(updatedTracks);
 	}

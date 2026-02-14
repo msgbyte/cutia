@@ -134,7 +134,7 @@ class StorageService {
 				isMain: scene.isMain,
 				tracks: (scene.tracks ?? []).map((track) =>
 					track.type === "video"
-						? { ...track, isMain: track.isMain ?? false } // legacy: isMain was optional
+						? { ...track, isMain: track.isMain ?? false, transitions: track.transitions ?? [] }
 						: track,
 				),
 				bookmarks: scene.bookmarks ?? [],

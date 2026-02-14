@@ -502,7 +502,7 @@ export function VideoProperties({
 						</PropertyItem>
 					</div>
 				</PropertyGroup>
-			</PanelBaseView>
+				</PanelBaseView>
 		</div>
 	);
 }

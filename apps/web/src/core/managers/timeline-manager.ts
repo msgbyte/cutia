@@ -4,8 +4,18 @@ import type {
 	TimelineTrack,
 	TimelineElement,
 	ClipboardItem,
+	TransitionType,
+	TrackTransition,
+	VideoTrack,
 } from "@/types/timeline";
 import { calculateTotalDuration } from "@/lib/timeline";
+import {
+	buildTrackTransition,
+	addTransitionToTrack,
+	removeTransitionFromTrack,
+	cleanupTransitionsForTrack,
+	areElementsAdjacent,
+} from "@/lib/timeline/transition-utils";
 import {
 	AddTrackCommand,
 	RemoveTrackCommand,
@@ -248,6 +258,111 @@ export class TimelineManager {
 	}): void {
 		const command = new ToggleElementsMutedCommand(elements);
 		this.editor.command.execute({ command });
+	}
+
+	// ---- Transition management ----
+
+	addTransition({
+		trackId,
+		fromElementId,
+		toElementId,
+		type,
+		duration,
+	}: {
+		trackId: string;
+		fromElementId: string;
+		toElementId: string;
+		type: TransitionType;
+		duration: number;
+	}): TrackTransition | null {
+		const track = this.getTrackById({ trackId });
+		if (!track || track.type !== "video") return null;
+
+		const fromElement = track.elements.find((el) => el.id === fromElementId);
+		const toElement = track.elements.find((el) => el.id === toElementId);
+		if (!fromElement || !toElement) return null;
+
+		if (!areElementsAdjacent({ elementA: fromElement, elementB: toElement })) {
+			return null;
+		}
+
+		const transition = buildTrackTransition({
+			type,
+			duration,
+			fromElementId,
+			toElementId,
+		});
+
+		const updatedTrack = addTransitionToTrack({
+			track: track as VideoTrack,
+			transition,
+		});
+
+		const updatedTracks = this.getTracks().map((t) =>
+			t.id === trackId ? updatedTrack : t,
+		);
+		this.updateTracks(updatedTracks);
+		return transition;
+	}
+
+	removeTransition({
+		trackId,
+		transitionId,
+	}: {
+		trackId: string;
+		transitionId: string;
+	}): void {
+		const track = this.getTrackById({ trackId });
+		if (!track || track.type !== "video") return;
+
+		const updatedTrack = removeTransitionFromTrack({
+			track: track as VideoTrack,
+			transitionId,
+		});
+
+		const updatedTracks = this.getTracks().map((t) =>
+			t.id === trackId ? updatedTrack : t,
+		);
+		this.updateTracks(updatedTracks);
+	}
+
+	updateTransition({
+		trackId,
+		transitionId,
+		updates,
+	}: {
+		trackId: string;
+		transitionId: string;
+		updates: Partial<Pick<TrackTransition, "type" | "duration">>;
+	}): void {
+		const track = this.getTrackById({ trackId });
+		if (!track || track.type !== "video") return;
+
+		const updatedTracks = this.getTracks().map((t) => {
+			if (t.id !== trackId || t.type !== "video") return t;
+			return {
+				...t,
+				transitions: (t.transitions ?? []).map((tr) =>
+					tr.id === transitionId ? { ...tr, ...updates } : tr,
+				),
+			};
+		});
+		this.updateTracks(updatedTracks);
+	}
+
+	cleanupTransitions({ trackId }: { trackId: string }): void {
+		const track = this.getTrackById({ trackId });
+		if (!track || track.type !== "video") return;
+
+		const cleaned = cleanupTransitionsForTrack({
+			track: track as VideoTrack,
+		});
+		if (cleaned === track) return;
+
+		const updatedTracks = this.getTracks().map((t) =>
+			t.id === trackId ? cleaned : t,
+		);
+		this.updateTracks(updatedTracks);
 	}
 
 	getTracks(): TimelineTrack[] {
