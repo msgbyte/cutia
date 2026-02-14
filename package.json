@@ -1,16 +1,16 @@
 {
-  "name": "opencut",
+  "name": "cutia",
   "packageManager": "bun@1.2.18",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "turbo run dev --filter=@opencut/web",
-    "build:web": "turbo run build --filter=@opencut/web",
-    "dev:tools": "turbo run dev --filter=@opencut/tools",
-    "build:tools": "turbo run build --filter=@opencut/tools",
-    "start:tools": "turbo run start --filter=@opencut/tools",
+    "dev:web": "turbo run dev --filter=@cutia/web",
+    "build:web": "turbo run build --filter=@cutia/web",
+    "dev:tools": "turbo run dev --filter=@cutia/tools",
+    "build:tools": "turbo run build --filter=@cutia/tools",
+    "start:tools": "turbo run start --filter=@cutia/tools",
     "lint:web": "biome lint apps/web/src --max-diagnostics=1000",
     "lint:web:fix": "biome lint apps/web/src --write --max-diagnostics=1000",
     "format:web": "biome format apps/web/src/services/renderer --write --max-diagnostics=1000",

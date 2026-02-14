@@ -1,5 +1,5 @@
 {
-  "name": "@opencut/web",
+  "name": "@cutia/web",
   "version": "0.1.0",
   "private": true,
   "packageManager": "bun@1.2.18",
@@ -24,8 +24,8 @@
     "@hugeicons/core-free-icons": "^3.1.1",
     "@hugeicons/react": "^1.1.4",
     "@huggingface/transformers": "^3.8.1",
-    "@opencut/env": "workspace:*",
-    "@opencut/ui": "workspace:*",
+    "@cutia/env": "workspace:*",
+    "@cutia/ui": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.8",

@@ -22,7 +22,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     env:
-      DATABASE_URL: "postgresql://opencut:opencut@localhost:5432/opencut"
+      DATABASE_URL: "postgresql://cutia:cutia@localhost:5432/cutia"
       BETTER_AUTH_SECRET: "supersecret"
       NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
       UPSTASH_REDIS_REST_URL: "https://your-upstash-redis-url"

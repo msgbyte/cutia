@@ -1,10 +1,10 @@
 <table width="100%">
   <tr>
     <td align="left" width="120">
-      <img src="apps/web/public/logos/opencut/1k/logo-white-black.png" alt="OpenCut Logo" width="100" />
+      <img src="apps/web/public/logos/cutia/1k/logo-white-black.png" alt="Cutia Logo" width="100" />
     </td>
     <td align="right">
-      <h1>OpenCut</span></h1>
+      <h1>Cutia</span></h1>
       <h3 style="margin-top: -10px;">A free, open-source video editor for web, desktop, and mobile.</h3>
     </td>
   </tr>
@@ -25,7 +25,7 @@
 - Multi-track support
 - Real-time preview
 - No watermarks or subscriptions
-- Analytics provided by [Databuddy](https://www.databuddy.cc?utm_source=opencut), 100% Anonymized & Non-invasive.
+- Analytics provided by [Databuddy](https://www.databuddy.cc?utm_source=cutia), 100% Anonymized & Non-invasive.
 ## Project Structure
 
 - `apps/web/` – Main Next.js web application
@@ -105,7 +105,7 @@ Before you begin, ensure you have the following installed on your system:
 
    ```bash
    # Database (matches docker-compose.yaml)
-   DATABASE_URL="postgresql://opencut:opencut@localhost:5432/opencut"
+   DATABASE_URL="postgresql://cutia:cutia@localhost:5432/cutia"
 
    # Generate a secure secret for Better Auth
    BETTER_AUTH_SECRET="your-generated-secret-here"
@@ -157,7 +157,7 @@ See our [Contributing Guide](.github/CONTRIBUTING.md) for detailed setup instruc
 
 ## Sponsors
 
-Thanks to [Vercel](https://vercel.com?utm_source=github-opencut&utm_campaign=oss) and [fal.ai](https://fal.ai?utm_source=github-opencut&utm_campaign=oss) for their support of open-source software.
+Thanks to [Vercel](https://vercel.com?utm_source=github-cutia&utm_campaign=oss) and [fal.ai](https://fal.ai?utm_source=github-cutia&utm_campaign=oss) for their support of open-source software.
 
 <a href="https://vercel.com/oss">
   <img alt="Vercel OSS Program" src="https://vercel.com/oss/program-badge.svg" />
@@ -169,12 +169,8 @@ Thanks to [Vercel](https://vercel.com?utm_source=github-opencut&utm_campaign=oss
 
 ---
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FOpenCut-app%2FOpenCut&project-name=opencut&repository-name=opencut)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAICutia%2FCutia&project-name=cutia&repository-name=cutia)
 
 ## License
 
 [MIT LICENSE](LICENSE)
-
----
-
-![Star History Chart](https://api.star-history.com/svg?repos=opencut-app/opencut&type=Date)

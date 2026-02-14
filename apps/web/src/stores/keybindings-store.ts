@@ -144,7 +144,7 @@ export const useKeybindingsStore = create<KeybindingsState>()(
 			},
 		}),
 		{
-			name: "opencut-keybindings",
+			name: "cutia-keybindings",
 			version: CURRENT_VERSION,
 			partialize: (state) => ({
 				keybindings: state.keybindings,

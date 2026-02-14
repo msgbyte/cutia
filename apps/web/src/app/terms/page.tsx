@@ -10,13 +10,13 @@ import { Separator } from "@/components/ui/separator";
 import { SOCIAL_LINKS } from "@/constants/site-constants";
 
 export const metadata: Metadata = {
-	title: "Terms of Service - OpenCut",
+	title: "Terms of Service - Cutia",
 	description:
-		"OpenCut's Terms of Service. Fair, transparent terms for our free and open-source video editor.",
+		"Cutia's Terms of Service. Fair, transparent terms for our free and open-source video editor.",
 	openGraph: {
-		title: "Terms of Service - OpenCut",
+		title: "Terms of Service - Cutia",
 		description:
-			"OpenCut's Terms of Service. Fair, transparent terms for our free and open-source video editor.",
+			"Cutia's Terms of Service. Fair, transparent terms for our free and open-source video editor.",
 		type: "website",
 	},
 };
@@ -52,7 +52,7 @@ export default function TermsPage() {
 								Free for personal and commercial use with no watermarks or
 								restrictions
 							</li>
-							<li>Don't use OpenCut for illegal activities or harassment</li>
+							<li>Don't use Cutia for illegal activities or harassment</li>
 							<li>
 								Service provided "as is" - we can't guarantee perfect uptime
 							</li>
@@ -68,10 +68,10 @@ export default function TermsPage() {
 						<p className="mt-4">
 							Questions? Email us at{" "}
 							<a
-								href="mailto:oss@opencut.app"
+								href="mailto:oss@cutia.app"
 								className="text-primary hover:underline"
 							>
-								oss@opencut.app
+								oss@cutia.app
 							</a>
 						</p>
 					</AccordionContent>
@@ -81,11 +81,11 @@ export default function TermsPage() {
 			<section className="flex flex-col gap-3">
 				<h2 className="text-2xl font-semibold">Your Content, Your Rights</h2>
 				<p>
-					<strong>You own everything you create.</strong> OpenCut processes
+					<strong>You own everything you create.</strong> Cutia processes
 					basic editing locally on your device. For AI features, content is
 					encrypted before upload and we cannot access your original files. We
 					make no claims to ownership, licensing, or rights over your videos,
-					projects, or any content you create using OpenCut.
+					projects, or any content you create using Cutia.
 				</p>
 				<ul className="list-disc space-y-2 pl-6">
 					<li>
@@ -97,25 +97,25 @@ export default function TermsPage() {
 						content
 					</li>
 					<li>You can export and use your content however you choose</li>
-					<li>No watermarks, no licensing restrictions from OpenCut</li>
+					<li>No watermarks, no licensing restrictions from Cutia</li>
 				</ul>
 			</section>
 
 			<section className="flex flex-col gap-3">
-				<h2 className="text-2xl font-semibold">How You Can Use OpenCut</h2>
-				<p>OpenCut is free for personal and commercial use. You can:</p>
+				<h2 className="text-2xl font-semibold">How You Can Use Cutia</h2>
+				<p>Cutia is free for personal and commercial use. You can:</p>
 				<ul className="list-disc space-y-2 pl-6">
 					<li>
 						Create videos for personal, educational, or commercial purposes
 					</li>
-					<li>Use OpenCut for client work and paid projects</li>
-					<li>Share and distribute videos created with OpenCut</li>
+					<li>Use Cutia for client work and paid projects</li>
+					<li>Share and distribute videos created with Cutia</li>
 					<li>
-						Modify and distribute the OpenCut software (under MIT license)
+						Modify and distribute the Cutia software (under MIT license)
 					</li>
 				</ul>
 				<p>
-					<strong>What we ask:</strong> Don't use OpenCut for illegal
+					<strong>What we ask:</strong> Don't use Cutia for illegal
 					activities, harassment, or creating harmful content. Be respectful of
 					others and follow applicable laws.
 				</p>
@@ -126,7 +126,7 @@ export default function TermsPage() {
 					AI Features and Data Processing
 				</h2>
 				<p>
-					OpenCut offers optional AI-powered features that require server
+					Cutia offers optional AI-powered features that require server
 					processing:
 				</p>
 				<ul className="list-disc space-y-2 pl-6">
@@ -160,17 +160,17 @@ export default function TermsPage() {
 					<li>You can delete your account at any time</li>
 				</ul>
 				<p>
-					OpenCut is provided "as is" without warranties. While we strive for
+					Cutia is provided "as is" without warranties. While we strive for
 					reliability, we can't guarantee uninterrupted service.
 				</p>
 			</section>
 
 			<section className="flex flex-col gap-3">
 				<h2 className="text-2xl font-semibold">Open Source Benefits</h2>
-				<p>Because OpenCut is open source, you have additional rights:</p>
+				<p>Because Cutia is open source, you have additional rights:</p>
 				<ul className="list-disc space-y-2 pl-6">
 					<li>Review our code to see exactly how we handle your data</li>
-					<li>Self-host OpenCut on your own servers</li>
+					<li>Self-host Cutia on your own servers</li>
 					<li>Modify the software to suit your needs</li>
 					<li>Contribute improvements back to the community</li>
 				</ul>
@@ -191,7 +191,7 @@ export default function TermsPage() {
 			<section className="flex flex-col gap-3">
 				<h2 className="text-2xl font-semibold">Third-Party Content</h2>
 				<p>
-					When using OpenCut, make sure you have the right to use any content
+					When using Cutia, make sure you have the right to use any content
 					you import:
 				</p>
 				<ul className="list-disc space-y-2 pl-6">
@@ -209,7 +209,7 @@ export default function TermsPage() {
 			<section className="flex flex-col gap-3">
 				<h2 className="text-2xl font-semibold">Limitations and Liability</h2>
 				<p>
-					OpenCut is provided free of charge. To the extent permitted by law:
+					Cutia is provided free of charge. To the extent permitted by law:
 				</p>
 				<ul className="list-disc space-y-2 pl-6">
 					<li>We're not liable for any loss of data or content</li>
@@ -229,7 +229,7 @@ export default function TermsPage() {
 
 			<section className="flex flex-col gap-3">
 				<h2 className="text-2xl font-semibold">Service Changes</h2>
-				<p>We may update OpenCut and these terms:</p>
+				<p>We may update Cutia and these terms:</p>
 				<ul className="list-disc space-y-2 pl-6">
 					<li>We'll notify you of significant changes to these terms</li>
 					<li>Continued use means you accept any updates</li>
@@ -240,11 +240,11 @@ export default function TermsPage() {
 
 			<section className="flex flex-col gap-3">
 				<h2 className="text-2xl font-semibold">Termination</h2>
-				<p>You can stop using OpenCut at any time:</p>
+				<p>You can stop using Cutia at any time:</p>
 				<ul className="list-disc space-y-2 pl-6">
 					<li>Delete your account through your profile settings</li>
 					<li>Clear your browser data to remove local projects</li>
-					<li>Your content remains yours even if you stop using OpenCut</li>
+					<li>Your content remains yours even if you stop using Cutia</li>
 					<li>We may suspend accounts for violations of these terms</li>
 				</ul>
 			</section>
@@ -264,10 +264,10 @@ export default function TermsPage() {
 					</a>
 					, email us at{" "}
 					<a
-						href="mailto:oss@opencut.app"
+						href="mailto:oss@cutia.app"
 						className="text-primary hover:underline"
 					>
-						oss@opencut.app
+						oss@cutia.app
 					</a>
 					, or reach out on{" "}
 					<a

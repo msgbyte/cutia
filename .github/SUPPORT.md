@@ -1,6 +1,6 @@
 # Getting Help
 
-Thanks for using OpenCut! If you need help, here are your options:
+Thanks for using Cutia! If you need help, here are your options:
 
 ## Documentation
 
@@ -24,4 +24,4 @@ Thanks for using OpenCut! If you need help, here are your options:
 - Feature requests may take longer to evaluate
 - Security issues are handled with priority
 
-We appreciate your patience and contributions to making OpenCut better!
+We appreciate your patience and contributions to making Cutia better!

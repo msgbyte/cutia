@@ -6,7 +6,7 @@ import {
 	TextIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { OcVideoIcon } from "@opencut/ui/icons";
+import { OcVideoIcon } from "@cutia/ui/icons";
 
 export const TRACK_COLORS: Record<TrackType, { background: string }> = {
 	video: {

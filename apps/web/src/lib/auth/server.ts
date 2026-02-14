@@ -2,7 +2,7 @@ import { betterAuth, type RateLimit } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { Redis } from "@upstash/redis";
 import { db } from "@/lib/db";
-import { webEnv } from "@opencut/env/web";
+import { webEnv } from "@cutia/env/web";
 
 const redis = new Redis({
 	url: webEnv.UPSTASH_REDIS_REST_URL,
@@ -36,7 +36,7 @@ export const auth = betterAuth({
 		},
 	},
 	baseURL: webEnv.NEXT_PUBLIC_SITE_URL,
-	appName: "OpenCut",
+	appName: "Cutia",
 	trustedOrigins: [webEnv.NEXT_PUBLIC_SITE_URL],
 });
 
