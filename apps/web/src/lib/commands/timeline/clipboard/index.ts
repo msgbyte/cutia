@@ -1,0 +1,1 @@
+export { PasteCommand } from "./paste";
