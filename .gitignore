@@ -6,6 +6,7 @@
 node_modules
 .cursorignore
 .turbo
+*.tsbuildinfo
 
 .env*
 !*.env.example
