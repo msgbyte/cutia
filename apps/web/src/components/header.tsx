@@ -25,10 +25,6 @@ export function Header() {
 			label: "Sponsors",
 			href: "/sponsors",
 		},
-		{
-			label: "Blog",
-			href: "/blog",
-		},
 	];
 
 	return (

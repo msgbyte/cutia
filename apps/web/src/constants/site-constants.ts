@@ -1,4 +1,4 @@
-import { OcDataBuddyIcon, OcMarbleIcon, } from "@opencut/ui/icons";
+import { OcDataBuddyIcon } from "@opencut/ui/icons";
 
 export const SITE_URL = "https://opencut.app";
 
@@ -20,13 +20,6 @@ export type ExternalTool = {
 };
 
 export const EXTERNAL_TOOLS: ExternalTool[] = [
-	{
-		name: "Marble",
-		description:
-			"Modern headless CMS for content management and the blog for OpenCut",
-		url: "https://marblecms.com?utm_source=opencut",
-		icon: OcMarbleIcon,
-	},
 	{
 		name: "Databuddy",
 		description: "GDPR compliant analytics and user insights for OpenCut",
