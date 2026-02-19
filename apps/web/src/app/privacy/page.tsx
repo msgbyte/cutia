@@ -160,28 +160,6 @@ export default function PrivacyPage() {
 			</section>
 
 			<section className="flex flex-col gap-3">
-				<h2 className="text-2xl font-semibold">Analytics</h2>
-				<p>
-					We use{" "}
-					<a
-						href="https://www.databuddy.cc"
-						target="_blank"
-						rel="noopener"
-						className="text-primary hover:underline"
-					>
-						Databuddy
-					</a>{" "}
-					for completely anonymized and non-invasive analytics to understand how
-					people use Cutia.
-				</p>
-				<p>
-					This helps us improve the editor, but we never collect personal
-					information, track individual users, or store any data that could
-					identify you.
-				</p>
-			</section>
-
-			<section className="flex flex-col gap-3">
 				<h2 className="text-2xl font-semibold">Local Storage & Cookies</h2>
 				<p>We use browser local storage and IndexedDB to:</p>
 				<ul className="list-disc space-y-2 pl-6">
@@ -205,9 +183,6 @@ export default function PrivacyPage() {
 					</li>
 					<li>
 						<strong>Vercel:</strong> For hosting and content delivery
-					</li>
-					<li>
-						<strong>Databuddy:</strong> For anonymized analytics
 					</li>
 				</ul>
 			</section>

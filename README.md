@@ -25,7 +25,7 @@
 - Multi-track support
 - Real-time preview
 - No watermarks or subscriptions
-- Analytics provided by [Databuddy](https://www.databuddy.cc?utm_source=cutia), 100% Anonymized & Non-invasive.
+
 ## Project Structure
 
 - `apps/web/` – Main Next.js web application

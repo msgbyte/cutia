@@ -1,5 +1,3 @@
-import { OcDataBuddyIcon } from "@cutia/ui/icons";
-
 export const SITE_URL = "https://cutia.app";
 
 export const SITE_INFO = {
@@ -19,14 +17,7 @@ export type ExternalTool = {
 	icon: React.ElementType;
 };
 
-export const EXTERNAL_TOOLS: ExternalTool[] = [
-	{
-		name: "Databuddy",
-		description: "GDPR compliant analytics and user insights for Cutia",
-		url: "https://databuddy.cc?utm_source=cutia",
-		icon: OcDataBuddyIcon,
-	},
-];
+export const EXTERNAL_TOOLS: ExternalTool[] = [];
 
 export const DEFAULT_LOGO_URL = "/logos/cutia/svg/logo.svg";
 
