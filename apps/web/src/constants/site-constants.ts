@@ -32,7 +32,7 @@ export const DEFAULT_LOGO_URL = "/logos/cutia/svg/logo.svg";
 
 export const SOCIAL_LINKS = {
 	x: "https://x.com/cutiaapp",
-	github: "https://github.com/AICutia/Cutia",
+	github: "https://github.com/msgbyte/cutia",
 	discord: "https://discord.com/invite/Mu3acKZvCp",
 };
 

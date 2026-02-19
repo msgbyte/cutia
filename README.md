@@ -169,7 +169,7 @@ Thanks to [Vercel](https://vercel.com?utm_source=github-cutia&utm_campaign=oss) 
 
 ---
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FAICutia%2FCutia&project-name=cutia&repository-name=cutia)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmsgbyte%2Fcutia&project-name=cutia&repository-name=cutia)
 
 ## License
 

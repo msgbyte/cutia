@@ -1,46 +1,79 @@
 "use client";
 
 import { Button } from "../ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import Image from "next/image";
-import { Handlebars } from "./handlebars";
 import Link from "next/link";
+import { DEFAULT_LOGO_URL, SOCIAL_LINKS } from "@/constants/site-constants";
 
 export function Hero() {
 	return (
-		<div className="flex min-h-[calc(100svh-4.5rem)] flex-col items-center justify-between px-4 text-center">
-			<Image
-				className="absolute top-0 left-0 -z-50 size-full object-cover opacity-85 invert dark:invert-0"
-				src="/landing-page-dark.png"
-				height={1903.5}
-				width={1269}
-				alt="landing-page.bg"
-			/>
-			<div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center">
-				<div className="inline-block text-4xl font-bold tracking-tighter md:text-[4rem]">
-					<h1>The open source</h1>
-					<Handlebars>Video editor</Handlebars>
+		<section className="relative flex min-h-[calc(100svh-4rem)] flex-col items-center justify-center overflow-hidden px-4">
+			<div className="pointer-events-none absolute inset-0 -z-10">
+				<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-muted/50 via-transparent to-transparent" />
+				<div className="absolute top-1/4 left-1/2 h-[600px] w-[600px] -translate-x-1/2 rounded-full border border-border/20" />
+				<div className="absolute top-1/4 left-1/2 h-[400px] w-[400px] -translate-x-1/2 rounded-full border border-border/15" />
+				<div className="absolute top-1/4 left-1/2 h-[200px] w-[200px] -translate-x-1/2 rounded-full border border-border/10" />
+			</div>
+
+			<div className="mx-auto flex max-w-4xl flex-col items-center text-center">
+				<div className="mb-8 flex items-center gap-3 rounded-full border border-border/60 bg-muted/30 px-4 py-2">
+					<Image
+						src={DEFAULT_LOGO_URL}
+						alt="Cutia"
+						width={20}
+						height={20}
+						className="dark:invert"
+					/>
+					<span className="text-muted-foreground text-sm font-medium">
+						Privacy-first video editing
+					</span>
 				</div>
 
-				<p className="text-muted-foreground mx-auto mt-10 max-w-xl text-base font-light tracking-wide sm:text-xl">
-					A simple but powerful video editor that gets the job done. Works on
-					any platform.
+				<h1 className="mb-6 text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl">
+					Edit videos,
+					<br />
+					<span className="text-muted-foreground">
+						right in your browser
+					</span>
+				</h1>
+
+				<p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-lg font-light leading-relaxed md:text-xl">
+					A simple yet powerful open-source video editor. No uploads, no
+					tracking — your media stays on your device.
 				</p>
 
-				<div className="mt-8 flex justify-center gap-8">
+				<div className="flex flex-col items-center gap-4 sm:flex-row">
 					<Link href="/projects">
 						<Button
 							variant="foreground"
-							type="submit"
+							type="button"
 							size="lg"
-							className="h-11 text-base"
+							className="h-12 gap-2 px-8 text-base"
 						>
-							Try early beta
-							<ArrowRight className="ml-0.5" />
+							<Play className="size-4" />
+							Start editing
+						</Button>
+					</Link>
+					<Link
+						href={SOCIAL_LINKS.github}
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						<Button
+							variant="outline"
+							type="button"
+							size="lg"
+							className="h-12 px-8 text-base"
+						>
+							View on GitHub
+							<ArrowRight className="size-4" />
 						</Button>
 					</Link>
 				</div>
 			</div>
-		</div>
+
+			<div className="pointer-events-none absolute bottom-0 left-0 h-32 w-full bg-gradient-to-t from-background to-transparent" />
+		</section>
 	);
 }
