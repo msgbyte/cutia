@@ -36,13 +36,13 @@ export function Footer() {
 					{/* Brand Section */}
 					<div className="max-w-sm md:col-span-1">
 						<div className="mb-4 flex items-center justify-start gap-2">
-							<Image
-								src={DEFAULT_LOGO_URL}
-								alt="Cutia"
-								width={24}
-								height={24}
-								className="invert dark:invert-0"
-							/>
+						<Image
+							src={DEFAULT_LOGO_URL}
+							alt="Cutia"
+							width={24}
+							height={24}
+							className="dark:invert"
+						/>
 							<span className="text-lg font-bold">Cutia</span>
 						</div>
 						<p className="text-muted-foreground mb-5 text-sm md:text-left">
