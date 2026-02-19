@@ -82,6 +82,7 @@ interface BaseAudioElement extends BaseTimelineElement {
 	volume: number;
 	muted?: boolean;
 	buffer?: AudioBuffer;
+	playbackRate?: number;
 }
 
 export interface UploadAudioElement extends BaseAudioElement {
@@ -112,6 +113,7 @@ export interface VideoElement extends BaseTimelineElement {
 	hidden?: boolean;
 	transform: Transform;
 	opacity: number;
+	playbackRate?: number;
 }
 
 export interface ImageElement extends BaseTimelineElement {

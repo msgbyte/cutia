@@ -11,6 +11,7 @@ import {
 import { clamp } from "@/utils/math";
 import { useEditor } from "@/hooks/use-editor";
 import type { ImageElement, VideoElement } from "@/types/timeline";
+import { SPEED_PRESETS, formatSpeedLabel } from "@/lib/timeline/speed-utils";
 
 export function VideoProperties({
 	_element: element,
@@ -27,18 +28,21 @@ export function VideoProperties({
 	const isEditingPosY = useRef(false);
 	const isEditingRotation = useRef(false);
 	const isEditingOpacity = useRef(false);
+	const isEditingSpeed = useRef(false);
 
 	const scaleDraft = useRef("");
 	const posXDraft = useRef("");
 	const posYDraft = useRef("");
 	const rotationDraft = useRef("");
 	const opacityDraft = useRef("");
+	const speedDraft = useRef("");
 
 	const initialScaleRef = useRef<number | null>(null);
 	const initialPosXRef = useRef<number | null>(null);
 	const initialPosYRef = useRef<number | null>(null);
 	const initialRotationRef = useRef<number | null>(null);
 	const initialOpacityRef = useRef<number | null>(null);
+	const initialSpeedRef = useRef<number | null>(null);
 
 	const scalePercent = Math.round(element.transform.scale * 100);
 	const scaleDisplay = isEditingScale.current
@@ -56,6 +60,40 @@ export function VideoProperties({
 	const opacityDisplay = isEditingOpacity.current
 		? opacityDraft.current
 		: Math.round(element.opacity * 100).toString();
+
+	const isVideoElement = element.type === "video";
+	const currentSpeed = isVideoElement
+		? (element as VideoElement).playbackRate ?? 1
+		: 1;
+	const speedDisplay = isEditingSpeed.current
+		? speedDraft.current
+		: formatSpeedLabel({ rate: currentSpeed });
+
+	const applySpeedChange = ({
+		newRate,
+		pushHistory,
+	}: {
+		newRate: number;
+		pushHistory: boolean;
+	}) => {
+		if (!isVideoElement) return;
+		const oldRate = currentSpeed;
+		const newDuration = element.duration * (oldRate / newRate);
+
+		editor.timeline.updateElements({
+			updates: [
+				{
+					trackId,
+					elementId: element.id,
+					updates: {
+						playbackRate: newRate,
+						duration: newDuration,
+					},
+				},
+			],
+			pushHistory,
+		});
+	};
 
 	const updateTransform = ({
 		updates,
@@ -502,6 +540,111 @@ export function VideoProperties({
 						</PropertyItem>
 					</div>
 				</PropertyGroup>
+
+				{isVideoElement && (
+					<PropertyGroup title="Speed" collapsible={false}>
+						<div className="space-y-6">
+							<PropertyItem direction="column">
+								<PropertyItemLabel>Playback Speed</PropertyItemLabel>
+								<PropertyItemValue>
+									<div className="flex flex-wrap gap-1.5">
+										{SPEED_PRESETS.map((preset) => {
+											const isActive = Math.abs(currentSpeed - preset.value) < 0.001;
+											return (
+												<button
+													key={preset.value}
+													type="button"
+													className={`rounded-sm px-2 py-0.5 text-xs transition-colors ${
+														isActive
+															? "bg-primary text-primary-foreground"
+															: "bg-accent hover:bg-accent/80"
+													}`}
+													onClick={() => {
+														initialSpeedRef.current = currentSpeed;
+														applySpeedChange({
+															newRate: preset.value,
+															pushHistory: true,
+														});
+														initialSpeedRef.current = null;
+													}}
+													onKeyDown={(event) => {
+														if (event.key === "Enter" || event.key === " ") {
+															initialSpeedRef.current = currentSpeed;
+															applySpeedChange({
+																newRate: preset.value,
+																pushHistory: true,
+															});
+															initialSpeedRef.current = null;
+														}
+													}}
+												>
+													{preset.label}
+												</button>
+											);
+										})}
+									</div>
+								</PropertyItemValue>
+							</PropertyItem>
+
+							<PropertyItem>
+								<PropertyItemLabel>Custom</PropertyItemLabel>
+								<PropertyItemValue>
+									<div className="flex items-center gap-1">
+										<Input
+											type="number"
+											value={speedDisplay}
+											min={0.25}
+											max={4}
+											step={0.05}
+											onFocus={() => {
+												isEditingSpeed.current = true;
+												speedDraft.current = formatSpeedLabel({ rate: currentSpeed });
+												forceRender();
+											}}
+											onChange={(event) => {
+												speedDraft.current = event.target.value;
+												forceRender();
+												if (initialSpeedRef.current === null) {
+													initialSpeedRef.current = currentSpeed;
+												}
+												const parsed = Number.parseFloat(event.target.value);
+												if (!Number.isNaN(parsed)) {
+													const clamped = clamp({ value: parsed, min: 0.25, max: 4 });
+													applySpeedChange({
+														newRate: clamped,
+														pushHistory: false,
+													});
+												}
+											}}
+											onBlur={() => {
+												if (initialSpeedRef.current !== null) {
+													const parsed = Number.parseFloat(speedDraft.current);
+													const clamped = Number.isNaN(parsed)
+														? currentSpeed
+														: clamp({ value: parsed, min: 0.25, max: 4 });
+													applySpeedChange({
+														newRate: initialSpeedRef.current,
+														pushHistory: false,
+													});
+													applySpeedChange({
+														newRate: clamped,
+														pushHistory: true,
+													});
+													initialSpeedRef.current = null;
+												}
+												isEditingSpeed.current = false;
+												speedDraft.current = "";
+												forceRender();
+											}}
+											className="bg-accent h-7 w-full [appearance:textfield] rounded-sm px-2 text-center !text-xs [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+										/>
+										<span className="text-muted-foreground text-xs">x</span>
+									</div>
+								</PropertyItemValue>
+							</PropertyItem>
+						</div>
+					</PropertyGroup>
+				)}
 				</PanelBaseView>
 		</div>
 	);

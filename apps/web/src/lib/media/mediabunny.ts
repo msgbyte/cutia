@@ -125,6 +125,7 @@ async function decodeAndMixAudioSource({
 		startTime: number;
 		duration: number;
 		trimStart: number;
+		playbackRate: number;
 	};
 	mixBuffers: Float32Array[];
 	totalSamples: number;
@@ -137,20 +138,24 @@ async function decodeAndMixAudioSource({
 	const audioTrack = await input.getPrimaryAudioTrack();
 	if (!audioTrack) return;
 
+	const rate = source.playbackRate;
 	const sink = new AudioBufferSink(audioTrack);
-	const trimEnd = source.trimStart + source.duration;
+	const sourceDuration = source.duration * rate;
+	const trimEnd = source.trimStart + sourceDuration;
 
 	for await (const { buffer, timestamp } of sink.buffers(
 		source.trimStart,
 		trimEnd,
 	)) {
-		const relativeTime = timestamp - source.trimStart;
+		// map source time → timeline time accounting for playback rate
+		const relativeSourceTime = timestamp - source.trimStart;
+		const relativeTimelineTime = relativeSourceTime / rate;
 		const outputStartSample = Math.floor(
-			(source.startTime + relativeTime) * SAMPLE_RATE,
+			(source.startTime + relativeTimelineTime) * SAMPLE_RATE,
 		);
 
-		// resample if needed
-		const resampleRatio = SAMPLE_RATE / buffer.sampleRate;
+		// resample ratio includes both sample rate conversion and speed change
+		const resampleRatio = (SAMPLE_RATE / buffer.sampleRate) / rate;
 
 		for (let ch = 0; ch < NUM_CHANNELS; ch++) {
 			const sourceChannel = Math.min(ch, buffer.numberOfChannels - 1);

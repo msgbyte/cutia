@@ -11,20 +11,24 @@ export interface VisualNodeParams {
 	trimEnd: number;
 	transform: Transform;
 	opacity: number;
+	playbackRate?: number;
 }
 
 export abstract class VisualNode<
 	Params extends VisualNodeParams = VisualNodeParams,
 > extends BaseNode<Params> {
 	protected getLocalTime(time: number): number {
-		return time - this.params.timeOffset + this.params.trimStart;
+		const rate = this.params.playbackRate ?? 1;
+		const elapsed = time - this.params.timeOffset;
+		return this.params.trimStart + elapsed * rate;
 	}
 
 	protected isInRange(time: number): boolean {
 		const localTime = this.getLocalTime(time);
+		const rate = this.params.playbackRate ?? 1;
 		return (
 			localTime >= this.params.trimStart - VISUAL_EPSILON &&
-			localTime < this.params.trimStart + this.params.duration
+			localTime < this.params.trimStart + this.params.duration * rate
 		);
 	}
 

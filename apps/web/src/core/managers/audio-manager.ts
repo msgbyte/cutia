@@ -219,10 +219,11 @@ export class AudioManager {
 
 		const clipStart = clip.startTime;
 		const clipEnd = clip.startTime + clip.duration;
+		const rate = clip.playbackRate;
 
 		const iteratorStartTime = Math.max(startTime, clipStart);
 		const sourceStartTime =
-			clip.trimStart + (iteratorStartTime - clip.startTime);
+			clip.trimStart + (iteratorStartTime - clip.startTime) * rate;
 
 		const iterator = sink.buffers(sourceStartTime);
 		this.clipIterators.set(clip.id, iterator);
@@ -231,11 +232,12 @@ export class AudioManager {
 			if (!this.editor.playback.getIsPlaying()) return;
 			if (sessionId !== this.playbackSessionId) return;
 
-			const timelineTime = clip.startTime + (timestamp - clip.trimStart);
+			const timelineTime = clip.startTime + (timestamp - clip.trimStart) / rate;
 			if (timelineTime >= clipEnd) break;
 
 			const node = audioContext.createBufferSource();
 			node.buffer = buffer;
+			node.playbackRate.value = rate;
 			node.connect(this.masterGain ?? audioContext.destination);
 
 			const startTimestamp =

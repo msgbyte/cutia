@@ -28,9 +28,13 @@ export function PropertiesPanel() {
 								</div>
 							);
 						}
-						if (element.type === "audio") {
-							return <AudioProperties key={element.id} _element={element} />;
-						}
+					if (element.type === "audio") {
+						return (
+							<div key={element.id}>
+								<AudioProperties _element={element} trackId={track.id} />
+							</div>
+						);
+					}
 					if (element.type === "video" || element.type === "image") {
 						return (
 							<div key={element.id}>

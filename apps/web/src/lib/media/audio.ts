@@ -142,6 +142,7 @@ interface AudioMixSource {
 	duration: number;
 	trimStart: number;
 	trimEnd: number;
+	playbackRate: number;
 }
 
 export interface AudioClipSource {
@@ -153,6 +154,7 @@ export interface AudioClipSource {
 	trimStart: number;
 	trimEnd: number;
 	muted: boolean;
+	playbackRate: number;
 }
 
 async function fetchLibraryAudioSource({
@@ -177,6 +179,7 @@ async function fetchLibraryAudioSource({
 			duration: element.duration,
 			trimStart: element.trimStart,
 			trimEnd: element.trimEnd,
+			playbackRate: element.playbackRate ?? 1,
 		};
 	} catch (error) {
 		console.warn("Failed to fetch library audio:", error);
@@ -211,11 +214,23 @@ async function fetchLibraryAudioClip({
 			trimStart: element.trimStart,
 			trimEnd: element.trimEnd,
 			muted,
+			playbackRate: element.playbackRate ?? 1,
 		};
 	} catch (error) {
 		console.warn("Failed to fetch library audio:", error);
 		return null;
 	}
+}
+
+function getElementPlaybackRate({
+	element,
+}: {
+	element: TimelineElement;
+}): number {
+	if ("playbackRate" in element && typeof element.playbackRate === "number") {
+		return element.playbackRate;
+	}
+	return 1;
 }
 
 function collectMediaAudioSource({
@@ -231,6 +246,7 @@ function collectMediaAudioSource({
 		duration: element.duration,
 		trimStart: element.trimStart,
 		trimEnd: element.trimEnd,
+		playbackRate: getElementPlaybackRate({ element }),
 	};
 }
 
@@ -252,6 +268,7 @@ function collectMediaAudioClip({
 		trimStart: element.trimStart,
 		trimEnd: element.trimEnd,
 		muted,
+		playbackRate: getElementPlaybackRate({ element }),
 	};
 }
 

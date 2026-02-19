@@ -39,6 +39,7 @@ function buildVisualElementNode({
 	}
 
 	if (mediaAsset.type === "video") {
+		const videoElement = element as VideoElement;
 		return new VideoNode({
 			mediaId: mediaAsset.id,
 			url: mediaAsset.url,
@@ -49,6 +50,7 @@ function buildVisualElementNode({
 			trimEnd: element.trimEnd,
 			transform: element.transform,
 			opacity: element.opacity,
+			playbackRate: videoElement.playbackRate,
 		});
 	}
 
