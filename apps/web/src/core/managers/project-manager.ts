@@ -565,6 +565,10 @@ export class ProjectManager {
 		return () => this.listeners.delete(listener);
 	}
 
+	private static readonly THUMBNAIL_MAX_WIDTH = 320;
+	private static readonly THUMBNAIL_JPEG_QUALITY = 0.7;
+	private static readonly THUMBNAIL_TIME_RATIO = 1 / 3;
+
 	private async updateThumbnailFromTimeline(): Promise<boolean> {
 		if (!this.active) return false;
 
@@ -575,6 +579,13 @@ export class ProjectManager {
 		if (duration === 0) return false;
 
 		const { canvasSize, background } = this.active.settings;
+
+		const aspectRatio = canvasSize.height / canvasSize.width;
+		const thumbWidth = Math.min(
+			canvasSize.width,
+			ProjectManager.THUMBNAIL_MAX_WIDTH,
+		);
+		const thumbHeight = Math.round(thumbWidth * aspectRatio);
 
 		const scene = buildScene({
 			tracks,
@@ -591,16 +602,22 @@ export class ProjectManager {
 		});
 
 		const tempCanvas = document.createElement("canvas");
-		tempCanvas.width = canvasSize.width;
-		tempCanvas.height = canvasSize.height;
+		tempCanvas.width = thumbWidth;
+		tempCanvas.height = thumbHeight;
+
+		const representativeTime =
+			duration * ProjectManager.THUMBNAIL_TIME_RATIO;
 
 		await renderer.renderToCanvas({
 			node: scene,
-			time: 0,
+			time: representativeTime,
 			targetCanvas: tempCanvas,
 		});
 
-		const thumbnailDataUrl = tempCanvas.toDataURL("image/png");
+		const thumbnailDataUrl = tempCanvas.toDataURL(
+			"image/jpeg",
+			ProjectManager.THUMBNAIL_JPEG_QUALITY,
+		);
 
 		await this.updateThumbnail({ thumbnail: thumbnailDataUrl });
 		return true;
