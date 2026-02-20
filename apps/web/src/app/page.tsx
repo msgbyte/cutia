@@ -1,6 +1,7 @@
 import { Hero } from "@/components/landing/hero";
 import { Features } from "@/components/landing/features";
 import { CTASection } from "@/components/landing/cta-section";
+import { StarField } from "@/components/landing/starfield";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import type { Metadata } from "next";
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 export default async function Home() {
 	return (
 		<div className="min-h-svh">
+			<StarField />
 			<Header />
 			<Hero />
 			<Features />
