@@ -20,7 +20,9 @@ export class SaveManager {
 	}
 
 	start(): void {
-		if (this.unsubscribeHandlers.length > 0) return;
+		if (this.unsubscribeHandlers.length > 0) {
+			return;
+		}
 
 		this.unsubscribeHandlers = [
 			this.editor.scenes.subscribe(() => {
@@ -52,7 +54,9 @@ export class SaveManager {
 	}
 
 	markDirty({ force = false }: { force?: boolean } = {}): void {
-		if (this.isPaused && !force) return;
+		if (this.isPaused && !force) {
+			return;
+		}
 		this.hasPendingSave = true;
 		this.queueSave();
 	}
@@ -77,13 +81,23 @@ export class SaveManager {
 	}
 
 	private async saveNow(): Promise<void> {
-		if (this.isSaving) return;
-		if (!this.hasPendingSave) return;
+		if (this.isSaving) {
+			return;
+		}
+		if (!this.hasPendingSave) {
+			return;
+		}
 
-		const activeProject = this.editor.project.getActive();
-		if (!activeProject) return;
-		if (this.editor.project.getIsLoading()) return;
-		if (this.editor.project.getMigrationState().isMigrating) return;
+		const activeProject = this.editor.project.getActiveOrNull();
+		if (!activeProject) {
+			return;
+		}
+		if (this.editor.project.getIsLoading()) {
+			return;
+		}
+		if (this.editor.project.getMigrationState().isMigrating) {
+			return;
+		}
 
 		this.isSaving = true;
 		this.hasPendingSave = false;
