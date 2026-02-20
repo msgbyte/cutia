@@ -245,6 +245,15 @@ export function useEditorActions() {
 	);
 
 	useActionHandler(
+		"detach-audio",
+		() => {
+			if (selectedElements.length === 0) return;
+			editor.timeline.detachAudio({ elements: selectedElements });
+		},
+		undefined,
+	);
+
+	useActionHandler(
 		"toggle-bookmark",
 		() => {
 			editor.scenes.toggleBookmark({ time: editor.playback.getCurrentTime() });

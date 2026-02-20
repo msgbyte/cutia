@@ -120,6 +120,7 @@ function PreviewToolbar({
 				variant="text"
 				size="icon"
 				type="button"
+				onMouseDown={(event) => event.preventDefault()}
 				onClick={() => invokeAction("toggle-play")}
 			>
 				<HugeiconsIcon icon={isPlaying ? PauseIcon : PlayIcon} />
@@ -130,6 +131,7 @@ function PreviewToolbar({
 					variant="text"
 					size="icon"
 					type="button"
+					onMouseDown={(event) => event.preventDefault()}
 					onClick={onToggleFullscreen}
 					title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
 				>

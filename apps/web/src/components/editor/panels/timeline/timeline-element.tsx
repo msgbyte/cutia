@@ -41,6 +41,7 @@ import {
 	VolumeMute02Icon,
 	Search01Icon,
 	Exchange01Icon,
+	MusicNote03Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { uppercase } from "@/utils/string";
@@ -174,11 +175,21 @@ export function TimelineElement({
 				</ActionMenuItem>
 				<CopyMenuItem />
 				{canElementHaveAudio(element) && hasAudio && (
-					<MuteMenuItem
-						isMultipleSelected={selectedElements.length > 1}
-						isCurrentElementSelected={isCurrentElementSelected}
-						isMuted={isMuted}
-					/>
+					<>
+						<MuteMenuItem
+							isMultipleSelected={selectedElements.length > 1}
+							isCurrentElementSelected={isCurrentElementSelected}
+							isMuted={isMuted}
+						/>
+						{element.type === "video" && (
+							<ActionMenuItem
+								action="detach-audio"
+								icon={<HugeiconsIcon icon={MusicNote03Icon} />}
+							>
+								Detach audio
+							</ActionMenuItem>
+						)}
+					</>
 				)}
 				{canElementBeHidden(element) && (
 					<VisibilityMenuItem
@@ -276,21 +287,20 @@ function ElementInner({
 					/>
 				</div>
 
-				{(hasAudio
-					? isMuted
-					: canElementBeHidden(element) && element.hidden) && (
+				{canElementBeHidden(element) && element.hidden && (
 					<div className="bg-opacity-50 pointer-events-none absolute inset-0 flex items-center justify-center bg-black">
-						{hasAudio ? (
-							<HugeiconsIcon
-								icon={VolumeHighIcon}
-								className="size-6 text-white"
-							/>
-						) : (
-							<HugeiconsIcon
-								icon={VolumeOffIcon}
-								className="size-6 text-white"
-							/>
-						)}
+						<HugeiconsIcon
+							icon={ViewOffSlashIcon}
+							className="size-6 text-white"
+						/>
+					</div>
+				)}
+				{hasAudio && isMuted && (
+					<div className="pointer-events-none absolute right-1 bottom-1 flex items-center justify-center rounded bg-black/60 p-0.5">
+						<HugeiconsIcon
+							icon={VolumeOffIcon}
+							className="size-3.5 text-white"
+						/>
 					</div>
 				)}
 			</button>
