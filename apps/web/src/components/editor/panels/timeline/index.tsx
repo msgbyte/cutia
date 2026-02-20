@@ -481,6 +481,7 @@ export function Timeline() {
 															});
 														}}
 														variant="destructive"
+														disabled={isMainTrack(track)}
 													>
 														<HugeiconsIcon icon={Delete02Icon} />
 														Delete track
