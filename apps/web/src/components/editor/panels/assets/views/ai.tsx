@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { toast } from "sonner";
 import { PanelBaseView as BaseView } from "@/components/editor/panels/panel-base-view";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +12,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getImageProvider } from "@/lib/ai/providers";
-import type { ImageGenerationResult } from "@/lib/ai/providers";
+import {
+	useAIImageGenerationStore,
+	type AssetStatus,
+	type GeneratedImage,
+} from "@/stores/ai-image-generation-store";
 import { useAISettingsStore } from "@/stores/ai-settings-store";
 import { useAssetsPanelStore } from "@/stores/assets-panel-store";
 import { cn } from "@/utils/ui";
@@ -37,50 +40,20 @@ function AIImageView() {
 	const { imageProviderId, imageApiKey } = useAISettingsStore();
 	const { setActiveTab } = useAssetsPanelStore();
 
-	const [prompt, setPrompt] = useState("");
-	const [aspectRatio, setAspectRatio] = useState("auto");
-	const [isGenerating, setIsGenerating] = useState(false);
-	const [generatedImages, setGeneratedImages] = useState<
-		ImageGenerationResult[]
-	>([]);
+	const {
+		prompt,
+		aspectRatio,
+		isGenerating,
+		generatedImages,
+		setPrompt,
+		setAspectRatio,
+		generate,
+	} = useAIImageGenerationStore();
 
 	const provider =
 		imageProviderId ? getImageProvider({ id: imageProviderId }) : null;
 
 	const isConfigured = provider !== null && imageApiKey.length > 0;
-
-	const handleGenerate = useCallback(async () => {
-		if (!provider || !imageApiKey) {
-			toast.error("Please configure an image provider in Settings");
-			return;
-		}
-
-		const trimmedPrompt = prompt.trim();
-		if (!trimmedPrompt) {
-			toast.error("Please enter a prompt");
-			return;
-		}
-
-		setIsGenerating(true);
-		try {
-			const results = await provider.generateImage({
-				request: {
-					prompt: trimmedPrompt,
-					aspectRatio: aspectRatio === "auto" ? undefined : aspectRatio,
-				},
-				apiKey: imageApiKey,
-			});
-
-			setGeneratedImages((previous) => [...results, ...previous]);
-			toast.success(`Generated ${results.length} image(s)`);
-		} catch (error) {
-			const message =
-				error instanceof Error ? error.message : "Image generation failed";
-			toast.error(message);
-		} finally {
-			setIsGenerating(false);
-		}
-	}, [provider, imageApiKey, prompt, aspectRatio]);
 
 	if (!isConfigured) {
 		return (
@@ -94,7 +67,8 @@ function AIImageView() {
 						No Image Provider Configured
 					</p>
 					<p className="text-muted-foreground text-xs">
-						Select a provider and enter your API key in Settings to get started.
+						Select a provider and enter your API key in Settings to
+						get started.
 					</p>
 				</div>
 				<Button
@@ -122,8 +96,11 @@ function AIImageView() {
 					rows={4}
 					disabled={isGenerating}
 					onKeyDown={(event) => {
-						if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-							handleGenerate();
+						if (
+							event.key === "Enter" &&
+							(event.metaKey || event.ctrlKey)
+						) {
+							generate();
 						}
 					}}
 				/>
@@ -135,7 +112,10 @@ function AIImageView() {
 						</SelectTrigger>
 						<SelectContent>
 							{ASPECT_RATIOS.map((ratio) => (
-								<SelectItem key={ratio.value} value={ratio.value}>
+								<SelectItem
+									key={ratio.value}
+									value={ratio.value}
+								>
 									{ratio.label}
 								</SelectItem>
 							))}
@@ -146,9 +126,9 @@ function AIImageView() {
 						type="button"
 						className="flex-1"
 						disabled={isGenerating || !prompt.trim()}
-						onClick={handleGenerate}
+						onClick={() => generate()}
 						onKeyDown={(event) => {
-							if (event.key === "Enter") handleGenerate();
+							if (event.key === "Enter") generate();
 						}}
 					>
 						{isGenerating ? (
@@ -161,7 +141,10 @@ function AIImageView() {
 							</>
 						) : (
 							<>
-								<HugeiconsIcon icon={ImageAdd01Icon} className="mr-1 size-4" />
+								<HugeiconsIcon
+									icon={ImageAdd01Icon}
+									className="mr-1 size-4"
+								/>
 								Generate
 							</>
 						)}
@@ -175,9 +158,9 @@ function AIImageView() {
 						Generated Images ({generatedImages.length})
 					</span>
 					<div className="grid grid-cols-2 gap-2">
-						{generatedImages.map((image, index) => (
+						{generatedImages.map((image) => (
 							<GeneratedImageCard
-								key={`${image.url}-${index}`}
+								key={image.id}
 								image={image}
 							/>
 						))}
@@ -188,34 +171,100 @@ function AIImageView() {
 	);
 }
 
-function GeneratedImageCard({ image }: { image: ImageGenerationResult }) {
-	const [isLoaded, setIsLoaded] = useState(false);
+function AssetStatusBadge({
+	status,
+	onRetry,
+}: {
+	status: AssetStatus;
+	onRetry: () => void;
+}) {
+	if (status === "added") {
+		return (
+			<div
+				className="absolute top-1 right-1 rounded-full bg-green-500/90 p-0.5"
+				title="Added to assets"
+			>
+				<svg
+					className="size-3 text-white"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="3"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				>
+					<title>Added</title>
+					<path d="M5 13l4 4L19 7" />
+				</svg>
+			</div>
+		);
+	}
 
-	const handleDownload = useCallback(async () => {
-		try {
-			const response = await fetch(image.url);
-			const blob = await response.blob();
-			const blobUrl = URL.createObjectURL(blob);
-			const anchor = document.createElement("a");
-			anchor.href = blobUrl;
-			anchor.download = `generated-${Date.now()}.png`;
-			anchor.click();
-			URL.revokeObjectURL(blobUrl);
-		} catch {
-			toast.error("Failed to download image");
-		}
-	}, [image.url]);
+	if (status === "pending" || status === "adding") {
+		return (
+			<div
+				className="absolute top-1 right-1"
+				title="Adding to assets..."
+			>
+				<HugeiconsIcon
+					icon={Loading03Icon}
+					className="size-4 animate-spin text-white drop-shadow"
+				/>
+			</div>
+		);
+	}
+
+	if (status === "failed") {
+		return (
+			<button
+				type="button"
+				className="absolute top-1 right-1 cursor-pointer rounded-full bg-red-500/90 p-0.5"
+				title="Failed to add to assets. Click to retry."
+				onClick={(event) => {
+					event.stopPropagation();
+					onRetry();
+				}}
+				onKeyDown={(event) => {
+					if (event.key === "Enter") {
+						event.stopPropagation();
+						onRetry();
+					}
+				}}
+			>
+				<svg
+					className="size-3 text-white"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="3"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+				>
+					<title>Retry</title>
+					<path d="M18 6L6 18M6 6l12 12" />
+				</svg>
+			</button>
+		);
+	}
+
+	return null;
+}
+
+function GeneratedImageCard({ image }: { image: GeneratedImage }) {
+	const [isLoaded, setIsLoaded] = useState(false);
+	const [hasError, setHasError] = useState(false);
+	const { retryAddToAssets } = useAIImageGenerationStore();
+
+	const handleRetry = useCallback(() => {
+		retryAddToAssets(image.id);
+	}, [retryAddToAssets, image.id]);
+
+	const showSpinner = !isLoaded && !hasError;
 
 	return (
 		<div className="group bg-muted/50 relative overflow-hidden rounded-md border">
-			<button
-				type="button"
-				className={cn(
-					"relative aspect-square w-full cursor-pointer overflow-hidden",
-				)}
-				onClick={handleDownload}
-			>
-				{!isLoaded && (
+			<div className="relative aspect-square w-full overflow-hidden">
+				{showSpinner && (
 					<div className="bg-muted absolute inset-0 flex items-center justify-center">
 						<HugeiconsIcon
 							icon={Loading03Icon}
@@ -231,9 +280,17 @@ function GeneratedImageCard({ image }: { image: ImageGenerationResult }) {
 						"h-full w-full object-cover transition-opacity",
 						isLoaded ? "opacity-100" : "opacity-0",
 					)}
-					onLoad={() => setIsLoaded(true)}
+					onLoad={() => {
+						setIsLoaded(true);
+						setHasError(false);
+					}}
+					onError={() => setHasError(true)}
 				/>
-			</button>
+				<AssetStatusBadge
+					status={image.assetStatus}
+					onRetry={handleRetry}
+				/>
+			</div>
 		</div>
 	);
 }

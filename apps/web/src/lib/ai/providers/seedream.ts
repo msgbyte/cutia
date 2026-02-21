@@ -82,7 +82,7 @@ export const seedreamProvider: AIImageProvider = {
 			model: DEFAULT_MODEL,
 			prompt: finalPrompt,
 			sequential_image_generation: "disabled",
-			response_format: "url",
+			response_format: "b64_json",
 			size: "2K",
 			stream: false,
 			watermark: false,
@@ -99,7 +99,7 @@ export const seedreamProvider: AIImageProvider = {
 		}
 
 		const result = await response.json();
-		const dataList: Array<{ url?: string }> = result.data ?? [];
+		const dataList: Array<{ url?: string; b64_json?: string }> = result.data ?? [];
 
 		if (dataList.length === 0) {
 			throw new Error("Seedream API returned no images");
@@ -107,6 +107,10 @@ export const seedreamProvider: AIImageProvider = {
 
 		const images: ImageGenerationResult[] = [];
 		for (const item of dataList) {
+			if (item.b64_json) {
+				images.push({ url: `data:image/png;base64,${item.b64_json}` });
+				continue;
+			}
 			if (item.url) {
 				images.push({ url: item.url });
 			}
