@@ -239,7 +239,10 @@ export function Timeline() {
 								className="bg-background flex-1 overflow-y-auto"
 								style={{ paddingTop: TIMELINE_CONSTANTS.PADDING_TOP_PX }}
 							>
-								<ScrollArea className="size-full" ref={trackLabelsScrollRef}>
+								<ScrollArea
+									className="size-full overflow-y-hidden"
+									ref={trackLabelsScrollRef}
+								>
 									<div className="flex flex-col gap-1">
 										{tracks.map((track) => (
 											<div
@@ -315,7 +318,7 @@ export function Timeline() {
 							headerHeight={timelineHeaderHeight}
 						/>
 						<ScrollArea
-							className="size-full overflow-y-hidden"
+							className="size-full"
 							ref={tracksScrollRef}
 							onMouseDown={(event) => {
 								const isDirectTarget = event.target === event.currentTarget;
