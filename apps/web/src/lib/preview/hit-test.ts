@@ -105,18 +105,27 @@ export function hitTestElements({
 }): HitResult | null {
 	const mediaMap = new Map(mediaAssets.map((asset) => [asset.id, asset]));
 
-	// render order: main tracks (bottom) → non-main tracks (top)
-	const orderedTracks = [
-		...tracks.filter((track) => isMainTrack(track)),
+	// keep hit-test ordering aligned with renderer layering:
+	// top-to-bottom = non-main -> main, then traverse bottom-to-top for draw order
+	const orderedTracksTopToBottom = [
 		...tracks.filter((track) => !isMainTrack(track)),
+		...tracks.filter((track) => isMainTrack(track)),
 	];
+	const orderedTracksBottomToTop = orderedTracksTopToBottom.slice().reverse();
 
 	const candidates: HitResult[] = [];
 
-	for (const track of orderedTracks) {
+	for (const track of orderedTracksBottomToTop) {
 		if ("hidden" in track && track.hidden) continue;
 
-		for (const element of track.elements) {
+		const orderedElements = track.elements
+			.slice()
+			.sort((a, b) => {
+				if (a.startTime !== b.startTime) return a.startTime - b.startTime;
+				return a.id.localeCompare(b.id);
+			});
+
+		for (const element of orderedElements) {
 			if (element.type === "audio") continue;
 			if ("hidden" in element && element.hidden) continue;
 			const isVisible =
