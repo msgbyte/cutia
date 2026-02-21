@@ -15,15 +15,23 @@ export function useKeybindingsListener() {
 		const eventOptions: AddEventListenerOptions = { capture: true };
 		const handleKeyDown = (ev: KeyboardEvent) => {
 			// do not check keybinds if the mode is disabled
-			if (!keybindingsEnabled) return;
+			if (!keybindingsEnabled) {
+				return;
+			}
 			// ignore key events if user is changing keybindings
-			if (isRecording) return;
+			if (isRecording) {
+				return;
+			}
 
 			const binding = getKeybindingString(ev);
-			if (!binding) return;
+			if (!binding) {
+				return;
+			}
 
 			const boundAction = keybindings[binding];
-			if (!boundAction) return;
+			if (!boundAction) {
+				return;
+			}
 
 			const activeElement = document.activeElement;
 			const isTextInput =
@@ -35,6 +43,7 @@ export function useKeybindingsListener() {
 			if (isTextInput) return;
 
 			ev.preventDefault();
+			ev.stopPropagation();
 
 			switch (boundAction) {
 				case "seek-forward":
