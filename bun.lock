@@ -78,7 +78,7 @@
         "unified": "^11.0.5",
         "use-deep-compare-effect": "^1.8.1",
         "vaul": "^1.1.1",
-        "wavesurfer.js": "^7.9.8",
+        "wavesurfer.js": "^7.12.1",
         "zod": "^3.25.67",
         "zustand": "^5.0.2",
       },
@@ -1140,7 +1140,7 @@
 
     "victory-vendor": ["victory-vendor@36.9.2", "", { "dependencies": { "@types/d3-array": "^3.0.3", "@types/d3-ease": "^3.0.0", "@types/d3-interpolate": "^3.0.1", "@types/d3-scale": "^4.0.2", "@types/d3-shape": "^3.1.0", "@types/d3-time": "^3.0.0", "@types/d3-timer": "^3.0.0", "d3-array": "^3.1.6", "d3-ease": "^3.0.1", "d3-interpolate": "^3.0.1", "d3-scale": "^4.0.2", "d3-shape": "^3.1.0", "d3-time": "^3.0.0", "d3-timer": "^3.0.1" } }, "sha512-PnpQQMuxlwYdocC8fIJqVXvkeViHYzotI+NJrCuav0ZYFoq912ZHBk3mCeuj+5/VpodOjPe1z0Fk2ihgzlXqjQ=="],
 
-    "wavesurfer.js": ["wavesurfer.js@7.10.0", "", {}, "sha512-GiyAHdorqGtUYG5fe4BfTf5lmtSLhrXoHeNlMsR80JOiOZxOrIOv9QaIR8RnqlleJ6D8R9cqvZKR9lfJcWcapg=="],
+    "wavesurfer.js": ["wavesurfer.js@7.12.1", "", {}, "sha512-NswPjVHxk0Q1F/VMRemCPUzSojjuHHisQrBqQiRXg7MVbe3f5vQ6r0rTTXA/a/neC/4hnOEC4YpXca4LpH0SUg=="],
 
     "web-namespaces": ["web-namespaces@2.0.1", "", {}, "sha512-bKr1DkiNa2krS7qxNtdrtHAmzuYGFQLiQ13TsorsdT6ULTkPLKuu5+GsFpDlg6JFjUTwX2DyhMPG2be8uPrqsQ=="],
 
