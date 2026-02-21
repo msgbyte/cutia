@@ -328,8 +328,8 @@ export function MediaView() {
 					</div>
 				</div>
 
-				<div className="scrollbar-thin size-full overflow-y-auto pt-1">
-					<div className="w-full flex-1 p-3 pt-0">
+			<div className="scrollbar-thin size-full overflow-y-auto">
+				<div className="w-full flex-1 p-2 pt-1">
 						{isDragOver || filteredMediaItems.length === 0 ? (
 							<MediaDragOverlay
 								isVisible={true}
@@ -411,9 +411,9 @@ function GridView({
 }) {
 	return (
 		<div
-			className="grid gap-2"
+			className="grid gap-1.5"
 			style={{
-				gridTemplateColumns: "repeat(auto-fill, 160px)",
+				gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
 			}}
 		>
 			{items.map((item) => (
@@ -434,6 +434,7 @@ function GridView({
 							}
 							isRounded={false}
 							variant="card"
+							containerClassName="w-full"
 							isHighlighted={highlightedId === item.id}
 						/>
 					</MediaItemWithContextMenu>
