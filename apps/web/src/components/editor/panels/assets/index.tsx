@@ -3,6 +3,7 @@
 import { Separator } from "@/components/ui/separator";
 import { type Tab, useAssetsPanelStore } from "@/stores/assets-panel-store";
 import { TabBar } from "./tabbar";
+import { AIView } from "./views/ai";
 import { Captions } from "./views/captions";
 import { MediaView } from "./views/media";
 import { SettingsView } from "./views/settings";
@@ -36,6 +37,7 @@ export function AssetsPanel() {
 				Adjustment view coming soon...
 			</div>
 		),
+		ai: <AIView />,
 		settings: <SettingsView />,
 	};
 

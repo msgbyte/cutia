@@ -1,6 +1,7 @@
 import type { ElementType } from "react";
 import { create } from "zustand";
 import {
+	AiBrain01Icon,
 	ArrowRightDoubleIcon,
 	ClosedCaptionIcon,
 	Folder03Icon,
@@ -24,6 +25,7 @@ export const TAB_KEYS = [
 	"captions",
 	"filters",
 	"adjustment",
+	"ai",
 	"settings",
 ] as const;
 
@@ -71,6 +73,10 @@ export const tabs = {
 	adjustment: {
 		icon: createHugeiconsIcon({ icon: SlidersHorizontalIcon }),
 		label: "Adjustment",
+	},
+	ai: {
+		icon: createHugeiconsIcon({ icon: AiBrain01Icon }),
+		label: "AI",
 	},
 	settings: {
 		icon: createHugeiconsIcon({ icon: Settings01Icon }),

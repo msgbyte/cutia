@@ -565,6 +565,31 @@ time.ts
   	fps: number;
   }): number
 
+## apps/web/src/lib/ai/providers
+
+types.ts
+  export interface AIImageProvider {
+    id: string
+    name: string
+    description: string
+  }
+  export interface AIVideoProvider {
+    id: string
+    name: string
+    description: string
+  }
+
+image-providers.ts
+  export const IMAGE_PROVIDERS: AIImageProvider[]
+
+video-providers.ts
+  export const VIDEO_PROVIDERS: AIVideoProvider[]
+
+index.ts
+  export type { AIImageProvider, AIVideoProvider } from "./types"
+  export { IMAGE_PROVIDERS } from "./image-providers"
+  export { VIDEO_PROVIDERS } from "./video-providers"
+
 ## apps/web/src/lib/actions
 
 definitions.ts
@@ -1301,6 +1326,9 @@ service.ts
   export const videoCache
 
 ## apps/web/src/stores
+
+ai-settings-store.ts
+  export const useAISettingsStore
 
 assets-panel-store.tsx
   export const TAB_KEYS

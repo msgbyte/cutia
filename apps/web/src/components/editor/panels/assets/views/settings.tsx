@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { memo, useCallback, useMemo } from "react";
 import { PanelBaseView as BaseView } from "@/components/editor/panels/panel-base-view";
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -20,6 +21,11 @@ import { patternCraftGradients } from "@/data/colors/pattern-craft";
 import { colors } from "@/data/colors/solid";
 import { syntaxUIGradients } from "@/data/colors/syntax-ui";
 import { useEditor } from "@/hooks/use-editor";
+import {
+	IMAGE_PROVIDERS,
+	VIDEO_PROVIDERS,
+} from "@/lib/ai/providers";
+import { useAISettingsStore } from "@/stores/ai-settings-store";
 import { useEditorStore } from "@/stores/editor-store";
 import { dimensionToAspectRatio } from "@/utils/geometry";
 import { cn } from "@/utils/ui";
@@ -57,6 +63,15 @@ function ProjectSettingsTabs() {
 							<div className="flex-1">
 								<BackgroundView />
 							</div>
+						</div>
+					),
+				},
+				{
+					value: "ai",
+					label: "AI",
+					content: (
+						<div className="p-5">
+							<AISettingsView />
 						</div>
 					),
 				},
@@ -350,6 +365,109 @@ function BackgroundView() {
 					</div>
 				</PropertyGroup>
 			))}
+		</div>
+	);
+}
+
+const NO_PROVIDER = "__none__";
+
+function AISettingsView() {
+	const {
+		imageProviderId,
+		imageApiKey,
+		videoProviderId,
+		videoApiKey,
+		setImageProvider,
+		setImageApiKey,
+		setVideoProvider,
+		setVideoApiKey,
+	} = useAISettingsStore();
+
+	const handleImageProviderChange = (value: string) => {
+		setImageProvider(value === NO_PROVIDER ? null : value);
+	};
+
+	const handleVideoProviderChange = (value: string) => {
+		setVideoProvider(value === NO_PROVIDER ? null : value);
+	};
+
+	return (
+		<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-3">
+				<span className="text-foreground text-xs font-medium">
+					Image Provider
+				</span>
+				<PropertyItem direction="column">
+					<PropertyItemLabel>Provider</PropertyItemLabel>
+					<PropertyItemValue>
+						<Select
+							value={imageProviderId ?? NO_PROVIDER}
+							onValueChange={handleImageProviderChange}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select a provider" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value={NO_PROVIDER}>None</SelectItem>
+								{IMAGE_PROVIDERS.map((provider) => (
+									<SelectItem key={provider.id} value={provider.id}>
+										{provider.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</PropertyItemValue>
+				</PropertyItem>
+				<PropertyItem direction="column">
+					<PropertyItemLabel>API Key</PropertyItemLabel>
+					<PropertyItemValue>
+						<Input
+							type="password"
+							placeholder="Enter API key"
+							value={imageApiKey}
+							onChange={(event) => setImageApiKey(event.target.value)}
+						/>
+					</PropertyItemValue>
+				</PropertyItem>
+			</div>
+
+			<div className="flex flex-col gap-3">
+				<span className="text-foreground text-xs font-medium">
+					Video Provider
+				</span>
+				<PropertyItem direction="column">
+					<PropertyItemLabel>Provider</PropertyItemLabel>
+					<PropertyItemValue>
+						<Select
+							value={videoProviderId ?? NO_PROVIDER}
+							onValueChange={handleVideoProviderChange}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select a provider" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value={NO_PROVIDER}>None</SelectItem>
+								{VIDEO_PROVIDERS.map((provider) => (
+									<SelectItem key={provider.id} value={provider.id}>
+										{provider.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</PropertyItemValue>
+				</PropertyItem>
+				<PropertyItem direction="column">
+					<PropertyItemLabel>API Key</PropertyItemLabel>
+					<PropertyItemValue>
+						<Input
+							type="password"
+							placeholder="Enter API key"
+							value={videoApiKey}
+							onChange={(event) => setVideoApiKey(event.target.value)}
+						/>
+					</PropertyItemValue>
+				</PropertyItem>
+			</div>
 		</div>
 	);
 }
