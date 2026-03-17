@@ -7,15 +7,9 @@ import { Link } from "@/lib/navigation";
 import { DEFAULT_LOGO_URL, SOCIAL_LINKS } from "@/constants/site-constants";
 import { motion } from "motion/react";
 import { useTranslation } from "@i18next-toolkit/nextjs-approuter";
+import { getFloatingParticles } from "./hero-particles";
 
-const floatingParticles = Array.from({ length: 6 }, (_, i) => ({
-	id: i,
-	size: 2 + Math.random() * 3,
-	x: 10 + Math.random() * 80,
-	y: 10 + Math.random() * 80,
-	duration: 15 + Math.random() * 20,
-	delay: Math.random() * -20,
-}));
+const floatingParticles = getFloatingParticles();
 
 export function Hero() {
 	const { t } = useTranslation();
