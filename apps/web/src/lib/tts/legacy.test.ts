@@ -1,0 +1,109 @@
+import { describe, expect, test } from "bun:test";
+import { synthesizeSpeechWithLegacyProvider } from "./legacy";
+
+describe("synthesizeSpeechWithLegacyProvider", () => {
+	test("rejects audio urls outside the expected https host allowlist", async () => {
+		const calls: string[] = [];
+
+		await expect(
+			synthesizeSpeechWithLegacyProvider({
+				text: "hello",
+				fetchImpl: async (input) => {
+					calls.push(String(input));
+					return Response.json({
+						code: 200,
+						url: "http://127.0.0.1/internal.mp3",
+					});
+				},
+			}),
+		).rejects.toThrow("Legacy TTS returned an unexpected audio URL");
+
+		expect(calls).toHaveLength(1);
+	});
+
+	test("rejects non-audio content returned by the legacy audio download", async () => {
+		await expect(
+			synthesizeSpeechWithLegacyProvider({
+				text: "hello",
+				fetchImpl: async (input) => {
+					if (String(input).includes("/apis/mbAIsc?")) {
+						return Response.json({
+							code: 200,
+							url: "https://api.milorapart.top/voice/test.mp3",
+						});
+					}
+
+					return new Response("<html></html>", {
+						status: 200,
+						headers: { "Content-Type": "text/html; charset=utf-8" },
+					});
+				},
+			}),
+		).rejects.toThrow("Legacy TTS returned non-audio content");
+	});
+
+	test("rejects synthesis text that would exceed the legacy GET limit", async () => {
+		let fetchCalled = false;
+
+		await expect(
+			synthesizeSpeechWithLegacyProvider({
+				text: "中".repeat(400),
+				fetchImpl: async () => {
+					fetchCalled = true;
+					return Response.json({
+						code: 200,
+						url: "https://api.milorapart.top/voice/test.mp3",
+					});
+				},
+			}),
+		).rejects.toThrow("Legacy TTS text is too long for GET fallback");
+
+		expect(fetchCalled).toBe(false);
+	});
+
+	test("aborts the metadata request when the upstream hangs", async () => {
+		await expect(
+			synthesizeSpeechWithLegacyProvider({
+				text: "hello",
+				timeoutMs: 10,
+				fetchImpl: async (_input, init) =>
+					new Promise((_resolve, reject) => {
+						init?.signal?.addEventListener(
+							"abort",
+							() => reject(new Error("aborted")),
+							{ once: true },
+						);
+					}),
+			}),
+		).rejects.toThrow("Legacy TTS request timed out");
+	});
+
+	test("aborts the audio download when the legacy audio fetch hangs", async () => {
+		let callCount = 0;
+
+		await expect(
+			synthesizeSpeechWithLegacyProvider({
+				text: "hello",
+				timeoutMs: 10,
+				fetchImpl: async (_input, init) => {
+					callCount++;
+
+					if (callCount === 1) {
+						return Response.json({
+							code: 200,
+							url: "https://api.milorapart.top/voice/test.mp3",
+						});
+					}
+
+					return new Promise((_resolve, reject) => {
+						init?.signal?.addEventListener(
+							"abort",
+							() => reject(new Error("aborted")),
+							{ once: true },
+						);
+					});
+				},
+			}),
+		).rejects.toThrow("Legacy TTS audio download timed out");
+	});
+});
