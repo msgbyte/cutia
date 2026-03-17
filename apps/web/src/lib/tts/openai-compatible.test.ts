@@ -32,6 +32,18 @@ describe("getExternalTtsConfig", () => {
 			}),
 		).toThrow("External TTS is not configured");
 	});
+
+	test("rejects whitespace-only config values", () => {
+		expect(() =>
+			getExternalTtsConfig({
+				env: {
+					API_BASE_URL: "   ",
+					API_MODEL: "  ",
+					API_KEY: "   ",
+				},
+			}),
+		).toThrow("External TTS is not configured");
+	});
 });
 
 describe("synthesizeSpeechWithOpenAiCompatible", () => {
@@ -189,6 +201,25 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 					}),
 			}),
 		).rejects.toThrow("Expected audio response");
+	});
+
+	test("accepts audio responses when MIME type casing and parameters vary", async () => {
+		const audio = await synthesizeSpeechWithOpenAiCompatible({
+			config: {
+				apiBaseUrl: "https://example.com/v1",
+				apiKey: "secret",
+				model: "tts-1",
+			},
+			text: "hello",
+			voice: "default",
+			fetchImpl: async () =>
+				new Response(Uint8Array.from([1, 2, 3]), {
+					status: 200,
+					headers: { "Content-Type": "Audio/MPEG; Charset=utf-8" },
+				}),
+		});
+
+		expect(Array.from(new Uint8Array(audio))).toEqual([1, 2, 3]);
 	});
 
 	test("aborts upstream requests that exceed the timeout", async () => {
