@@ -36,10 +36,18 @@ export function getExternalTtsConfig({
 		throw new Error("External TTS is not configured");
 	}
 
+	const apiBaseUrl = parsed.data.API_BASE_URL.trim().replace(/\/+$/, "");
+	const apiKey = parsed.data.API_KEY.trim();
+	const model = parsed.data.API_MODEL.trim();
+
+	if (!apiBaseUrl || !apiKey || !model) {
+		throw new Error("External TTS is not configured");
+	}
+
 	return {
-		apiBaseUrl: parsed.data.API_BASE_URL.replace(/\/+$/, ""),
-		apiKey: parsed.data.API_KEY,
-		model: parsed.data.API_MODEL,
+		apiBaseUrl,
+		apiKey,
+		model,
 	};
 }
 
@@ -154,10 +162,11 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 
 		if (response.ok) {
 			const contentType = response.headers.get("content-type") ?? "";
+			const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
 
 			if (
-				!contentType.includes("audio/") &&
-				contentType !== "application/octet-stream"
+				!mimeType.startsWith("audio/") &&
+				mimeType !== "application/octet-stream"
 			) {
 				throw new Error(
 					`Expected audio response, received ${contentType || "(no content-type)"}`,

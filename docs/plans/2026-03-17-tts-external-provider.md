@@ -1,7 +1,5 @@
 # 外部 TTS 扩展 Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** 让 Cutia 的 TTS 能力从硬编码单一路由改为可配置的外部 TTS API 调用，并继续把生成语音接入媒体库和时间线。
 
 **Architecture:** 在 `apps/web/src/lib/tts/` 新增可测试的 OpenAI 兼容 TTS 适配层，`/api/tts/generate` 只负责校验和响应转换，前端调用协议保持 `{ audio }` 不变。通过 `packages/env` 暴露配置，避免把供应商细节散落到 UI 和编辑器逻辑里。

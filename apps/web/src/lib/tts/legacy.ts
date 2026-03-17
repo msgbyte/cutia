@@ -77,10 +77,11 @@ export async function synthesizeSpeechWithLegacyProvider({
 	}
 
 	const contentType = audioResponse.headers.get("content-type") ?? "";
+	const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
 
 	if (
-		!contentType.includes("audio/") &&
-		contentType !== "application/octet-stream"
+		!mimeType.startsWith("audio/") &&
+		mimeType !== "application/octet-stream"
 	) {
 		throw new Error(
 			`Legacy TTS returned non-audio content: ${contentType || "(no content-type)"}`,
