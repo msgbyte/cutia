@@ -173,6 +173,24 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		).rejects.toThrow("Expected audio response");
 	});
 
+	test("rejects success responses when the content-type header is missing", async () => {
+		await expect(
+			synthesizeSpeechWithOpenAiCompatible({
+				config: {
+					apiBaseUrl: "https://example.com/v1",
+					apiKey: "secret",
+					model: "tts-1",
+				},
+				text: "hello",
+				voice: "default",
+				fetchImpl: async () =>
+					new Response(Uint8Array.from([1, 2, 3]), {
+						status: 200,
+					}),
+			}),
+		).rejects.toThrow("Expected audio response");
+	});
+
 	test("aborts upstream requests that exceed the timeout", async () => {
 		await expect(
 			synthesizeSpeechWithOpenAiCompatible({
@@ -213,5 +231,24 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 					}),
 			}),
 		).rejects.toThrow("gateway timeout");
+	});
+
+	test("falls back to the raw upstream body when JSON shape is unrecognized", async () => {
+		await expect(
+			synthesizeSpeechWithOpenAiCompatible({
+				config: {
+					apiBaseUrl: "https://example.com/v1",
+					apiKey: "secret",
+					model: "tts-1",
+				},
+				text: "hello",
+				voice: "nova",
+				fetchImpl: async () =>
+					new Response('{"message":"bad request"}', {
+						status: 400,
+						headers: { "Content-Type": "application/json" },
+					}),
+			}),
+		).rejects.toThrow('{"message":"bad request"}');
 	});
 });

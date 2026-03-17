@@ -57,15 +57,22 @@ async function getUpstreamErrorMessage({
 	response: Response;
 }): Promise<string> {
 	const contentType = response.headers.get("content-type") ?? "";
+	const text = await response.text().catch(() => "");
 
 	if (contentType.includes("application/json")) {
-		const json = (await response.json().catch(() => null)) as {
-			error?:
-				| string
-				| {
-						message?: string;
-				  };
-		} | null;
+		const json = (() => {
+			try {
+				return JSON.parse(text) as {
+					error?:
+						| string
+						| {
+								message?: string;
+						  };
+				} | null;
+			} catch {
+				return null;
+			}
+		})();
 
 		if (typeof json?.error === "string" && json.error.trim()) {
 			return json.error;
@@ -80,7 +87,6 @@ async function getUpstreamErrorMessage({
 		}
 	}
 
-	const text = await response.text().catch(() => "");
 	if (text.trim()) {
 		return text;
 	}
@@ -150,11 +156,12 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 			const contentType = response.headers.get("content-type") ?? "";
 
 			if (
-				contentType &&
 				!contentType.includes("audio/") &&
 				contentType !== "application/octet-stream"
 			) {
-				throw new Error(`Expected audio response, received ${contentType}`);
+				throw new Error(
+					`Expected audio response, received ${contentType || "(no content-type)"}`,
+				);
 			}
 
 			const audio = await response.arrayBuffer();

@@ -42,6 +42,26 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 		).rejects.toThrow("Legacy TTS returned non-audio content");
 	});
 
+	test("rejects audio downloads when the content-type header is missing", async () => {
+		await expect(
+			synthesizeSpeechWithLegacyProvider({
+				text: "hello",
+				fetchImpl: async (input) => {
+					if (String(input).includes("/apis/mbAIsc?")) {
+						return Response.json({
+							code: 200,
+							url: "https://api.milorapart.top/voice/test.mp3",
+						});
+					}
+
+					return new Response(Uint8Array.from([1, 2, 3]), {
+						status: 200,
+					});
+				},
+			}),
+		).rejects.toThrow("Legacy TTS returned non-audio content");
+	});
+
 	test("rejects synthesis text that would exceed the legacy GET limit", async () => {
 		let fetchCalled = false;
 
