@@ -26,7 +26,14 @@ export async function synthesizeSpeechWithFallback({
 	try {
 		const config = getExternalTtsConfig({ env });
 		return await openAiSynthesize({ config, text, voice });
-	} catch {
+	} catch (error) {
+		if (
+			error instanceof Error &&
+			error.message === "External TTS is not configured"
+		) {
+			throw error;
+		}
+
 		return legacySynthesize({ text, voice });
 	}
 }

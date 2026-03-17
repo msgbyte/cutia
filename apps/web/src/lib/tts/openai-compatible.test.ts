@@ -124,6 +124,36 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		]);
 	});
 
+	test("tries the /v1 speech endpoint first when the base url is root-level", async () => {
+		const calls: string[] = [];
+
+		const audio = await synthesizeSpeechWithOpenAiCompatible({
+			config: {
+				apiBaseUrl: "https://example.com",
+				apiKey: "secret",
+				model: "tts-1",
+			},
+			text: "hello",
+			voice: "default",
+			fetchImpl: async (input) => {
+				const url = String(input);
+				calls.push(url);
+
+				if (url === "https://example.com/v1/audio/speech") {
+					return new Response(Uint8Array.from([5, 4, 3]), {
+						status: 200,
+						headers: { "Content-Type": "audio/mpeg" },
+					});
+				}
+
+				return new Response("not found", { status: 404 });
+			},
+		});
+
+		expect(Array.from(new Uint8Array(audio))).toEqual([5, 4, 3]);
+		expect(calls[0]).toBe("https://example.com/v1/audio/speech");
+	});
+
 	test("rejects non-audio success responses", async () => {
 		await expect(
 			synthesizeSpeechWithOpenAiCompatible({
@@ -141,6 +171,29 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 					}),
 			}),
 		).rejects.toThrow("Expected audio response");
+	});
+
+	test("aborts upstream requests that exceed the timeout", async () => {
+		await expect(
+			synthesizeSpeechWithOpenAiCompatible({
+				config: {
+					apiBaseUrl: "https://example.com/v1",
+					apiKey: "secret",
+					model: "tts-1",
+				},
+				text: "hello",
+				voice: "default",
+				timeoutMs: 10,
+				fetchImpl: async (_input, init) =>
+					new Promise((_resolve, reject) => {
+						init?.signal?.addEventListener(
+							"abort",
+							() => reject(new Error("aborted")),
+							{ once: true },
+						);
+					}),
+			}),
+		).rejects.toThrow("External TTS request timed out");
 	});
 
 	test("surfaces upstream text errors when JSON is unavailable", async () => {

@@ -3,12 +3,14 @@ import {
 	DEFAULT_EXTERNAL_TTS_VOICE,
 	DEFAULT_VOICE_PACK,
 } from "@/constants/tts-constants";
+import { fetchWithTimeout } from "./fetch-with-timeout";
 
 const externalTtsConfigSchema = z.object({
 	API_BASE_URL: z.string().min(1),
 	API_MODEL: z.string().min(1),
 	API_KEY: z.string().min(1),
 });
+const EXTERNAL_TTS_TIMEOUT_MS = 15_000;
 
 export { DEFAULT_EXTERNAL_TTS_VOICE };
 
@@ -92,11 +94,13 @@ function getSpeechEndpointUrls({
 	apiBaseUrl: string;
 }): string[] {
 	const normalizedBaseUrl = apiBaseUrl.replace(/\/+$/, "");
-	const urls = [`${normalizedBaseUrl}/audio/speech`];
-
-	if (normalizedBaseUrl.endsWith("/v1")) {
-		urls.push(`${normalizedBaseUrl.slice(0, -3)}/audio/speech`);
-	}
+	const baseWithoutV1 = normalizedBaseUrl.endsWith("/v1")
+		? normalizedBaseUrl.slice(0, -3)
+		: normalizedBaseUrl;
+	const baseWithV1 = normalizedBaseUrl.endsWith("/v1")
+		? normalizedBaseUrl
+		: `${normalizedBaseUrl}/v1`;
+	const urls = [`${baseWithV1}/audio/speech`, `${baseWithoutV1}/audio/speech`];
 
 	return [...new Set(urls)];
 }
@@ -106,11 +110,13 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 	text,
 	voice,
 	fetchImpl = fetch,
+	timeoutMs = EXTERNAL_TTS_TIMEOUT_MS,
 }: {
 	config: ExternalTtsConfig;
 	text: string;
 	voice?: string;
 	fetchImpl?: FetchLike;
+	timeoutMs?: number;
 }): Promise<ArrayBuffer> {
 	const endpointUrls = getSpeechEndpointUrls({
 		apiBaseUrl: config.apiBaseUrl,
@@ -132,7 +138,13 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 	let lastErrorResponse: Response | null = null;
 
 	for (const endpointUrl of endpointUrls) {
-		const response = await fetchImpl(endpointUrl, requestInit);
+		const response = await fetchWithTimeout({
+			fetchImpl,
+			init: requestInit,
+			input: endpointUrl,
+			timeoutMessage: "External TTS request timed out",
+			timeoutMs,
+		});
 
 		if (response.ok) {
 			const contentType = response.headers.get("content-type") ?? "";
