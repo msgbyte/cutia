@@ -3,7 +3,7 @@ import {
 	DEFAULT_EXTERNAL_TTS_VOICE,
 	DEFAULT_VOICE_PACK,
 } from "@/constants/tts-constants";
-import { fetchWithTimeout } from "./fetch-with-timeout";
+import { fetchWithTimeout, type FetchLike } from "./fetch-with-timeout";
 
 const externalTtsConfigSchema = z.object({
 	API_BASE_URL: z.string().min(1),
@@ -19,11 +19,6 @@ export interface ExternalTtsConfig {
 	apiKey: string;
 	model: string;
 }
-
-type FetchLike = (
-	input: RequestInfo | URL,
-	init?: RequestInit,
-) => Promise<Response>;
 
 export function getExternalTtsConfig({
 	env,
