@@ -79,11 +79,12 @@ export async function synthesizeSpeechWithLegacyProvider({
 	const contentType = audioResponse.headers.get("content-type") ?? "";
 
 	if (
-		contentType &&
 		!contentType.includes("audio/") &&
 		contentType !== "application/octet-stream"
 	) {
-		throw new Error(`Legacy TTS returned non-audio content: ${contentType}`);
+		throw new Error(
+			`Legacy TTS returned non-audio content: ${contentType || "(no content-type)"}`,
+		);
 	}
 
 	const audio = await audioResponse.arrayBuffer();
