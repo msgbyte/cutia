@@ -48,6 +48,7 @@ import { useCharacterStore } from "@/stores/character-store";
 import type { AICharacter } from "@/types/character";
 import { UserIcon } from "@hugeicons/core-free-icons";
 import { Link, useRouter } from "@/lib/navigation";
+import { AITemplateCutsView } from "./ai-template-cuts";
 
 const ASPECT_RATIOS = [
 	{ value: "auto", label: "Auto" },
@@ -1180,6 +1181,11 @@ export function AIView() {
 					value: "generate",
 					label: t("Generate"),
 					content: <AIGenerateView />,
+				},
+				{
+					value: "template-cuts",
+					label: t("Presets"),
+					content: <AITemplateCutsView />,
 				},
 				{
 					value: "ai-characters",

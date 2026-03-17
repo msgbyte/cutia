@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useKeybindingsStore } from "@/stores/keybindings-store";
-import { ACTIONS, type TAction } from "@/lib/actions";
+import { ACTIONS, type TActionWithOptionalArgs } from "@/lib/actions";
 import {
 	getPlatformAlternateKey,
 	getPlatformSpecialKey,
@@ -13,7 +13,7 @@ export interface KeyboardShortcut {
 	keys: string[];
 	description: string;
 	category: string;
-	action: TAction;
+	action: TActionWithOptionalArgs;
 	icon?: React.ReactNode;
 }
 
@@ -40,7 +40,7 @@ export function useKeyboardShortcutsHelp() {
 
 	const shortcuts = useMemo(() => {
 		const result: KeyboardShortcut[] = [];
-		const actionToKeys: Record<string, string[]> = {};
+		const actionToKeys: Partial<Record<TActionWithOptionalArgs, string[]>> = {};
 
 		for (const [key, action] of Object.entries(keybindings)) {
 			if (action) {
@@ -51,8 +51,10 @@ export function useKeyboardShortcutsHelp() {
 			}
 		}
 
-		for (const [actionId, keys] of Object.entries(actionToKeys)) {
-			if (!isAction(actionId)) continue;
+		for (const [actionId, keys] of Object.entries(actionToKeys) as Array<
+			[TActionWithOptionalArgs, string[] | undefined]
+		>) {
+			if (!keys) continue;
 
 			const actionDef = ACTIONS[actionId];
 			result.push({
@@ -75,8 +77,4 @@ export function useKeyboardShortcutsHelp() {
 	return {
 		shortcuts,
 	};
-}
-
-function isAction(id: string): id is TAction {
-	return id in ACTIONS;
 }

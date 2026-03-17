@@ -12,7 +12,8 @@ import {
 	CURRENT_VERSION,
 } from "./keybindings/migrations";
 
-export const defaultKeybindings: KeybindingConfig = getDefaultShortcuts();
+export const defaultKeybindings: KeybindingConfig =
+	getDefaultShortcuts() as KeybindingConfig;
 
 export interface KeybindingConflict {
 	key: ShortcutKey;

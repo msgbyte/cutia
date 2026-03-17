@@ -32,7 +32,11 @@ import type {
 } from "@/types/timeline";
 import type { MediaAsset } from "@/types/assets";
 import { mediaSupportsAudio } from "@/lib/media/media-utils";
-import { getActionDefinition, type TAction, invokeAction } from "@/lib/actions";
+import {
+	getActionDefinition,
+	type TActionWithOptionalArgs,
+	invokeAction,
+} from "@/lib/actions";
 import { useElementSelection } from "@/hooks/timeline/element/use-element-selection";
 import Image from "next/image";
 import {
@@ -58,7 +62,7 @@ import { useTranslation } from "@i18next-toolkit/nextjs-approuter";
 import type { ComponentProps } from "react";
 import { VideoThumbnailStrip } from "./video-thumbnail-strip";
 
-function getDisplayShortcut(action: TAction) {
+function getDisplayShortcut(action: TActionWithOptionalArgs) {
 	const { defaultShortcuts } = getActionDefinition(action);
 	if (!defaultShortcuts?.length) {
 		return "";
@@ -706,7 +710,7 @@ function ActionMenuItem({
 	children,
 	...props
 }: Omit<ComponentProps<typeof ContextMenuItem>, "onClick" | "textRight"> & {
-	action: TAction;
+	action: TActionWithOptionalArgs;
 }) {
 	return (
 		<ContextMenuItem

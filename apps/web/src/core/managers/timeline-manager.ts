@@ -36,6 +36,7 @@ import {
 	UpdateElementStartTimeCommand,
 	MoveElementCommand,
 	DetachAudioCommand,
+	GenerateTemplateCutCommand,
 } from "@/lib/commands/timeline";
 import { BatchCommand } from "@/lib/commands";
 import type { InsertElementParams } from "@/lib/commands/timeline/element/insert-element";
@@ -285,6 +286,11 @@ export class TimelineManager {
 		elements: { trackId: string; elementId: string }[];
 	}): void {
 		const command = new DetachAudioCommand(elements);
+		this.editor.command.execute({ command });
+	}
+
+	generateTemplateCut({ tracks }: { tracks: TimelineTrack[] }): void {
+		const command = new GenerateTemplateCutCommand(tracks);
 		this.editor.command.execute({ command });
 	}
 

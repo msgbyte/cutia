@@ -9,6 +9,7 @@ import { getElementsAtTime } from "@/lib/timeline";
 import { generateAndInsertSpeech } from "@/lib/tts/service";
 import { toast } from "sonner";
 import { i18next } from "@/lib/i18n";
+import { generateTemplateCut as generateTemplateCutDraft } from "@/lib/auto-edit/generate-template-cut";
 
 export function useEditorActions() {
 	const editor = useEditor();
@@ -123,6 +124,40 @@ export function useEditorActions() {
 		"goto-end",
 		() => {
 			editor.playback.seek({ time: editor.timeline.getTotalDuration() });
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"generate-template-cut",
+		(args) => {
+			if (!activeProject) {
+				toast.error(i18next.t("No active project"));
+				return;
+			}
+
+			try {
+				const { tracks } = generateTemplateCutDraft({
+					templateId: args.templateId,
+					assets: editor.media.getAssets(),
+				});
+
+				if (editor.playback.getIsPlaying()) {
+					editor.playback.toggle();
+				}
+
+				editor.timeline.generateTemplateCut({ tracks });
+				editor.selection.clearSelection();
+				editor.playback.seek({ time: 0 });
+
+				toast.success(i18next.t("Template draft generated"));
+			} catch (error) {
+				toast.error(
+					error instanceof Error
+						? i18next.t(error.message)
+						: i18next.t("Failed to generate template draft"),
+				);
+			}
 		},
 		undefined,
 	);
