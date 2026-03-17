@@ -50,4 +50,28 @@ describe("synthesizeSpeechWithFallback", () => {
 		expect(Array.from(new Uint8Array(result))).toEqual([7, 8, 9]);
 		expect(legacyCalled).toBe(true);
 	});
+
+	test("rethrows missing external config instead of silently falling back", async () => {
+		let openAiCalled = false;
+		let legacyCalled = false;
+
+		await expect(
+			synthesizeSpeechWithFallback({
+				env: {},
+				text: "hello",
+				voice: "default",
+				openAiSynthesize: async () => {
+					openAiCalled = true;
+					return Uint8Array.from([1]).buffer;
+				},
+				legacySynthesize: async () => {
+					legacyCalled = true;
+					return Uint8Array.from([9]).buffer;
+				},
+			}),
+		).rejects.toThrow("External TTS is not configured");
+
+		expect(openAiCalled).toBe(false);
+		expect(legacyCalled).toBe(false);
+	});
 });
