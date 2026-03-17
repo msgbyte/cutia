@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fetchWithTimeout } from "./fetch-with-timeout";
+import { fetchWithTimeout, type FetchLike } from "./fetch-with-timeout";
 
 const LEGACY_TTS_API_BASE = "https://api.milorapart.top/apis/mbAIsc";
 const LEGACY_TTS_ALLOWED_AUDIO_HOSTS = new Set(["api.milorapart.top"]);
@@ -11,13 +11,9 @@ const legacyResponseSchema = z.object({
 	url: z.string().url(),
 });
 
-type FetchLike = (
-	input: RequestInfo | URL,
-	init?: RequestInit,
-) => Promise<Response>;
-
 export async function synthesizeSpeechWithLegacyProvider({
 	text,
+	voice: _voice,
 	fetchImpl = fetch,
 	timeoutMs = LEGACY_TTS_TIMEOUT_MS,
 }: {
@@ -26,6 +22,8 @@ export async function synthesizeSpeechWithLegacyProvider({
 	fetchImpl?: FetchLike;
 	timeoutMs?: number;
 }): Promise<ArrayBuffer> {
+	void _voice; // Legacy upstream has a fixed voice; keep the arg for parity.
+
 	const query = new URLSearchParams({
 		format: "mp3",
 		text,

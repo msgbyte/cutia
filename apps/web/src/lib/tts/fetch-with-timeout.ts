@@ -1,7 +1,15 @@
-type FetchLike = (
+export type FetchLike = (
 	input: RequestInfo | URL,
 	init?: RequestInit,
 ) => Promise<Response>;
+
+function throwCallerAbortReason(signal: AbortSignal): never {
+	if (signal.reason instanceof Error) {
+		throw signal.reason;
+	}
+
+	throw new Error(String(signal.reason ?? "Request aborted"));
+}
 
 export async function fetchWithTimeout({
 	fetchImpl,
@@ -22,11 +30,7 @@ export async function fetchWithTimeout({
 	const abortFromCaller = () => controller.abort(callerSignal?.reason);
 
 	if (callerSignal?.aborted) {
-		if (callerSignal.reason instanceof Error) {
-			throw callerSignal.reason;
-		}
-
-		throw new Error(String(callerSignal.reason ?? "Request aborted"));
+		throwCallerAbortReason(callerSignal);
 	}
 
 	callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
@@ -47,11 +51,7 @@ export async function fetchWithTimeout({
 		}
 
 		if (callerSignal?.aborted) {
-			if (callerSignal.reason instanceof Error) {
-				throw callerSignal.reason;
-			}
-
-			throw new Error(String(callerSignal.reason ?? "Request aborted"));
+			throwCallerAbortReason(callerSignal);
 		}
 
 		throw error;
