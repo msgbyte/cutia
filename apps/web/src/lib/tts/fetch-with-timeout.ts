@@ -17,7 +17,24 @@ export async function fetchWithTimeout({
 	timeoutMessage: string;
 }): Promise<Response> {
 	const controller = new AbortController();
-	const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+	const callerSignal = init?.signal;
+	let didTimeout = false;
+	const abortFromCaller = () => controller.abort(callerSignal?.reason);
+
+	if (callerSignal?.aborted) {
+		if (callerSignal.reason instanceof Error) {
+			throw callerSignal.reason;
+		}
+
+		throw new Error(String(callerSignal.reason ?? "Request aborted"));
+	}
+
+	callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
+
+	const timeoutId = setTimeout(() => {
+		didTimeout = true;
+		controller.abort(new Error(timeoutMessage));
+	}, timeoutMs);
 
 	try {
 		return await fetchImpl(input, {
@@ -25,12 +42,21 @@ export async function fetchWithTimeout({
 			signal: controller.signal,
 		});
 	} catch (error) {
-		if (controller.signal.aborted) {
+		if (didTimeout) {
 			throw new Error(timeoutMessage);
+		}
+
+		if (callerSignal?.aborted) {
+			if (callerSignal.reason instanceof Error) {
+				throw callerSignal.reason;
+			}
+
+			throw new Error(String(callerSignal.reason ?? "Request aborted"));
 		}
 
 		throw error;
 	} finally {
 		clearTimeout(timeoutId);
+		callerSignal?.removeEventListener("abort", abortFromCaller);
 	}
 }
