@@ -44,7 +44,7 @@ git add packages/env/src/web.ts apps/web/src/constants/tts-constants.ts
 git commit -m "feat: prepare external tts config"
 ```
 
-### Task 2: 先写失败测试覆盖外部 TTS 适配层
+## Task 2: 先写失败测试覆盖外部 TTS 适配层
 
 **Files:**
 - Create: `apps/web/src/lib/tts/openai-compatible.test.ts`
@@ -80,7 +80,7 @@ git add apps/web/src/lib/tts/openai-compatible.ts apps/web/src/lib/tts/openai-co
 git commit -m "feat: add external tts adapter"
 ```
 
-### Task 3: 接回 API 路由
+## Task 3: 接回 API 路由
 
 **Files:**
 - Modify: `apps/web/src/app/api/tts/generate/route.ts`
@@ -113,7 +113,7 @@ git add apps/web/src/app/api/tts/generate/route.ts
 git commit -m "feat: wire route to external tts provider"
 ```
 
-### Task 4: 端到端验证与整理
+## Task 4: 端到端验证与整理
 
 **Files:**
 - Modify: `docs/plans/2026-03-17-tts-external-provider-design.md`
