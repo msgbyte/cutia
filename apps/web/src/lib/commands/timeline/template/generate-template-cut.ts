@@ -11,7 +11,7 @@ export class GenerateTemplateCutCommand extends Command {
 
 	execute(): void {
 		const editor = EditorCore.getInstance();
-		this.savedState = editor.timeline.getTracks();
+		this.savedState = structuredClone(editor.timeline.getTracks());
 		editor.timeline.updateTracks(this.tracks);
 	}
 

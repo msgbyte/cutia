@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: 建立一键成片生成器的测试骨架
+## Task 1: 建立一键成片生成器的测试骨架
 
 **Files:**
 - Create: `apps/web/src/lib/auto-edit/generate-template-cut.test.ts`
@@ -66,7 +66,7 @@ git add apps/web/src/lib/auto-edit/generate-template-cut.test.ts apps/web/src/li
 git commit -m "test: add template cut generator coverage"
 ```
 
-### Task 2: 补充混合素材与错误分支测试
+## Task 2: 补充混合素材与错误分支测试
 
 **Files:**
 - Modify: `apps/web/src/lib/auto-edit/generate-template-cut.test.ts`
@@ -121,7 +121,7 @@ git add apps/web/src/lib/auto-edit/generate-template-cut.test.ts apps/web/src/li
 git commit -m "feat: support mixed assets in template cuts"
 ```
 
-### Task 3: 为模板成片引入可撤销命令
+## Task 3: 为模板成片引入可撤销命令
 
 **Files:**
 - Create: `apps/web/src/lib/commands/timeline/template/generate-template-cut.ts`
@@ -162,7 +162,7 @@ git add apps/web/src/lib/commands/timeline/template apps/web/src/lib/commands/ti
 git commit -m "feat: add undoable template cut command"
 ```
 
-### Task 4: 接入动作系统
+## Task 4: 接入动作系统
 
 **Files:**
 - Modify: `apps/web/src/lib/actions/definitions.ts`
@@ -206,7 +206,7 @@ git add apps/web/src/lib/actions/definitions.ts apps/web/src/lib/actions/types.t
 git commit -m "feat: wire template cut action"
 ```
 
-### Task 5: 在 AI 面板实现模板成片 UI
+## Task 5: 在 AI 面板实现模板成片 UI
 
 **Files:**
 - Modify: `apps/web/src/components/editor/panels/assets/views/ai.tsx`
@@ -243,7 +243,7 @@ git add apps/web/src/components/editor/panels/assets/views/ai.tsx
 git commit -m "feat: add one-click template panel"
 ```
 
-### Task 6: 同步翻译与全量验证
+## Task 6: 同步翻译与全量验证
 
 **Files:**
 - Modify: `apps/web/public/locales/*/translation.json` (如工具自动更新)

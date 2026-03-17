@@ -7,6 +7,7 @@ export interface TemplateCutDefinition {
 	name: string;
 	description: string;
 	imageDuration: number;
+	defaultAudioDuration: number;
 	maxVideoDuration: number;
 	minVideoDuration: number;
 	transitionType: TransitionType;
@@ -21,6 +22,7 @@ export const TEMPLATE_CUTS: TemplateCutDefinition[] = [
 		name: "Clean Cut",
 		description: "Balanced pacing with simple dissolves.",
 		imageDuration: 3.5,
+		defaultAudioDuration: 12,
 		maxVideoDuration: 6,
 		minVideoDuration: 2.5,
 		transitionType: "dissolve",
@@ -33,6 +35,7 @@ export const TEMPLATE_CUTS: TemplateCutDefinition[] = [
 		name: "Story Pulse",
 		description: "Faster pacing with directional wipes.",
 		imageDuration: 2.5,
+		defaultAudioDuration: 10,
 		maxVideoDuration: 4,
 		minVideoDuration: 2,
 		transitionType: "wipe-left",
@@ -45,6 +48,7 @@ export const TEMPLATE_CUTS: TemplateCutDefinition[] = [
 		name: "Memory Album",
 		description: "Longer holds for photos and softer endings.",
 		imageDuration: 4.5,
+		defaultAudioDuration: 14,
 		maxVideoDuration: 7,
 		minVideoDuration: 3,
 		transitionType: "wipe-up",

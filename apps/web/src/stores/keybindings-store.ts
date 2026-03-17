@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { TActionWithOptionalArgs } from "@/lib/actions";
+import type { TAction, TActionWithOptionalArgs } from "@/lib/actions";
 import { getDefaultShortcuts } from "@/lib/actions";
 import { isTypableDOMElement } from "@/utils/browser";
 import { isAppleDevice } from "@/utils/platform";
@@ -12,8 +12,15 @@ import {
 	CURRENT_VERSION,
 } from "./keybindings/migrations";
 
-export const defaultKeybindings: KeybindingConfig =
-	getDefaultShortcuts() as KeybindingConfig;
+const isKeybindableAction = (
+	action: TAction,
+): action is TActionWithOptionalArgs => action !== "generate-template-cut";
+
+export const defaultKeybindings: KeybindingConfig = Object.fromEntries(
+	Object.entries(getDefaultShortcuts()).filter(([, action]) =>
+		isKeybindableAction(action),
+	),
+) as KeybindingConfig;
 
 export interface KeybindingConflict {
 	key: ShortcutKey;

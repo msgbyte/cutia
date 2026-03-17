@@ -165,7 +165,7 @@ export function generateTemplateCut({
 			type: "audio",
 			muted: false,
 			elements: audioAssets.map((asset): AudioElement => {
-				const duration = asset.duration ?? template.imageDuration;
+				const duration = asset.duration ?? template.defaultAudioDuration;
 				const element = {
 					...buildUploadAudioElement({
 					mediaId: asset.id,
