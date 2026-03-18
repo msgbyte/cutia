@@ -116,7 +116,10 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 						);
 					}),
 			}),
-		).rejects.toThrow("Legacy TTS request timed out");
+		).rejects.toMatchObject({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: "Legacy TTS request timed out",
+		});
 	});
 
 	test("aborts the audio download when the legacy audio fetch hangs", async () => {
@@ -145,6 +148,9 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 					});
 				},
 			}),
-		).rejects.toThrow("Legacy TTS audio download timed out");
+		).rejects.toMatchObject({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: "Legacy TTS audio download timed out",
+		});
 	});
 });

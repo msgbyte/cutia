@@ -242,7 +242,10 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 						);
 					}),
 			}),
-		).rejects.toThrow("External TTS request timed out");
+		).rejects.toMatchObject({
+			code: "EXTERNAL_TTS_UPSTREAM",
+			message: "External TTS request timed out",
+		});
 	});
 
 	test("surfaces upstream text errors when JSON is unavailable", async () => {
