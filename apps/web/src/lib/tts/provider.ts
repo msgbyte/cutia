@@ -32,6 +32,10 @@ export async function synthesizeSpeechWithFallback({
 			throw error;
 		}
 
+		if (!isTtsError(error) || error.code !== "EXTERNAL_TTS_UPSTREAM") {
+			throw error;
+		}
+
 		return legacySynthesize({ text, voice });
 	}
 }

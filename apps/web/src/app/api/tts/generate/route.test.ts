@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { TtsError } from "@/lib/tts/errors";
 
 let synthesizeImpl: typeof import("@/lib/tts/provider").synthesizeSpeechWithFallback;
 const originalConsoleError = console.error;
@@ -49,8 +50,9 @@ describe("POST /api/tts/generate", () => {
 
 	test("returns 502 for structured legacy upstream errors without relying on message prefixes", async () => {
 		synthesizeImpl = async () => {
-			throw Object.assign(new Error("legacy fallback audio download failed"), {
+			throw new TtsError({
 				code: "LEGACY_TTS_UPSTREAM",
+				message: "legacy fallback audio download failed",
 			});
 		};
 
@@ -64,8 +66,9 @@ describe("POST /api/tts/generate", () => {
 
 	test("returns 502 for structured external upstream errors without relying on message prefixes", async () => {
 		synthesizeImpl = async () => {
-			throw Object.assign(new Error("upstream gateway timeout"), {
+			throw new TtsError({
 				code: "EXTERNAL_TTS_UPSTREAM",
+				message: "upstream gateway timeout",
 			});
 		};
 
@@ -79,8 +82,9 @@ describe("POST /api/tts/generate", () => {
 
 	test("returns the original config error message for structured config failures", async () => {
 		synthesizeImpl = async () => {
-			throw Object.assign(new Error("external config missing"), {
+			throw new TtsError({
 				code: "EXTERNAL_TTS_CONFIG",
+				message: "external config missing",
 			});
 		};
 
