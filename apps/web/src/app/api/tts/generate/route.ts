@@ -1,6 +1,7 @@
 import { webEnv } from "@cutia/env/web";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { isTtsError } from "@/lib/tts/errors";
 import { synthesizeSpeechWithFallback } from "@/lib/tts/provider";
 
 const requestSchema = z.object({
@@ -36,16 +37,14 @@ export async function POST(request: NextRequest) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		console.error("TTS generate error:", error);
 
-		if (message === "External TTS is not configured") {
-			return NextResponse.json({ error: message }, { status: 500 });
-		}
-
-		if (
-			message.startsWith("External TTS request failed:") ||
-			message === "External TTS returned empty audio" ||
-			message.startsWith("Legacy TTS ")
-		) {
-			return NextResponse.json({ error: message }, { status: 502 });
+		if (isTtsError(error)) {
+			switch (error.code) {
+				case "EXTERNAL_TTS_CONFIG":
+					return NextResponse.json({ error: message }, { status: 500 });
+				case "EXTERNAL_TTS_UPSTREAM":
+				case "LEGACY_TTS_UPSTREAM":
+					return NextResponse.json({ error: message }, { status: 502 });
+			}
 		}
 
 		return NextResponse.json(
