@@ -4,6 +4,7 @@ import {
 	DEFAULT_VOICE_PACK,
 } from "@/constants/tts-constants";
 import { fetchWithTimeout, type FetchLike } from "./fetch-with-timeout";
+import { TtsError } from "./errors";
 
 const externalTtsConfigSchema = z.object({
 	API_BASE_URL: z.string().min(1),
@@ -28,7 +29,10 @@ export function getExternalTtsConfig({
 	const parsed = externalTtsConfigSchema.safeParse(env);
 
 	if (!parsed.success) {
-		throw new Error("External TTS is not configured");
+		throw new TtsError({
+			code: "EXTERNAL_TTS_CONFIG",
+			message: "External TTS is not configured",
+		});
 	}
 
 	const apiBaseUrl = parsed.data.API_BASE_URL.trim().replace(/\/+$/, "");
@@ -36,7 +40,10 @@ export function getExternalTtsConfig({
 	const model = parsed.data.API_MODEL.trim();
 
 	if (!apiBaseUrl || !apiKey || !model) {
-		throw new Error("External TTS is not configured");
+		throw new TtsError({
+			code: "EXTERNAL_TTS_CONFIG",
+			message: "External TTS is not configured",
+		});
 	}
 
 	return {
@@ -163,15 +170,19 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 				!mimeType.startsWith("audio/") &&
 				mimeType !== "application/octet-stream"
 			) {
-				throw new Error(
-					`Expected audio response, received ${contentType || "(no content-type)"}`,
-				);
+				throw new TtsError({
+					code: "EXTERNAL_TTS_UPSTREAM",
+					message: `Expected audio response, received ${contentType || "(no content-type)"}`,
+				});
 			}
 
 			const audio = await response.arrayBuffer();
 
 			if (audio.byteLength === 0) {
-				throw new Error("External TTS returned empty audio");
+				throw new TtsError({
+					code: "EXTERNAL_TTS_UPSTREAM",
+					message: "External TTS returned empty audio",
+				});
 			}
 
 			return audio;
@@ -184,9 +195,10 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 		}
 	}
 
-	throw new Error(
-		`External TTS request failed: ${await getUpstreamErrorMessage({
+	throw new TtsError({
+		code: "EXTERNAL_TTS_UPSTREAM",
+		message: `External TTS request failed: ${await getUpstreamErrorMessage({
 			response: lastErrorResponse ?? new Response(null, { status: 500 }),
 		})}`,
-	);
+	});
 }

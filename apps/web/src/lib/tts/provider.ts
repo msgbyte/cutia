@@ -2,6 +2,7 @@ import {
 	getExternalTtsConfig,
 	synthesizeSpeechWithOpenAiCompatible,
 } from "./openai-compatible";
+import { isTtsError } from "./errors";
 import { synthesizeSpeechWithLegacyProvider } from "./legacy";
 
 type TtsEnv = {
@@ -27,10 +28,7 @@ export async function synthesizeSpeechWithFallback({
 		const config = getExternalTtsConfig({ env });
 		return await openAiSynthesize({ config, text, voice });
 	} catch (error) {
-		if (
-			error instanceof Error &&
-			error.message === "External TTS is not configured"
-		) {
+		if (isTtsError(error) && error.code === "EXTERNAL_TTS_CONFIG") {
 			throw error;
 		}
 
