@@ -21,6 +21,18 @@ export interface ExternalTtsConfig {
 	model: string;
 }
 
+function wrapExternalUpstreamError({ error }: { error: unknown }): TtsError {
+	if (error instanceof TtsError) {
+		return error;
+	}
+
+	return new TtsError({
+		code: "EXTERNAL_TTS_UPSTREAM",
+		message:
+			error instanceof Error ? error.message : "External TTS request failed",
+	});
+}
+
 export function getExternalTtsConfig({
 	env,
 }: {
@@ -154,13 +166,19 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 	let lastErrorResponse: Response | null = null;
 
 	for (const endpointUrl of endpointUrls) {
-		const response = await fetchWithTimeout({
-			fetchImpl,
-			init: requestInit,
-			input: endpointUrl,
-			timeoutMessage: "External TTS request timed out",
-			timeoutMs,
-		});
+		let response: Response;
+
+		try {
+			response = await fetchWithTimeout({
+				fetchImpl,
+				init: requestInit,
+				input: endpointUrl,
+				timeoutMessage: "External TTS request timed out",
+				timeoutMs,
+			});
+		} catch (error) {
+			throw wrapExternalUpstreamError({ error });
+		}
 
 		if (response.ok) {
 			const contentType = response.headers.get("content-type") ?? "";

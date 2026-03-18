@@ -12,6 +12,18 @@ const legacyResponseSchema = z.object({
 	url: z.string().url(),
 });
 
+function wrapLegacyUpstreamError({ error }: { error: unknown }): TtsError {
+	if (error instanceof TtsError) {
+		return error;
+	}
+
+	return new TtsError({
+		code: "LEGACY_TTS_UPSTREAM",
+		message:
+			error instanceof Error ? error.message : "Legacy TTS generation failed",
+	});
+}
+
 export async function synthesizeSpeechWithLegacyProvider({
 	text,
 	voice: _voice,
@@ -38,12 +50,18 @@ export async function synthesizeSpeechWithLegacyProvider({
 		});
 	}
 
-	const upstreamResponse = await fetchWithTimeout({
-		fetchImpl,
-		input: upstreamUrl,
-		timeoutMessage: "Legacy TTS request timed out",
-		timeoutMs,
-	});
+	let upstreamResponse: Response;
+
+	try {
+		upstreamResponse = await fetchWithTimeout({
+			fetchImpl,
+			input: upstreamUrl,
+			timeoutMessage: "Legacy TTS request timed out",
+			timeoutMs,
+		});
+	} catch (error) {
+		throw wrapLegacyUpstreamError({ error });
+	}
 
 	if (!upstreamResponse.ok) {
 		throw new TtsError({
@@ -74,12 +92,18 @@ export async function synthesizeSpeechWithLegacyProvider({
 		});
 	}
 
-	const audioResponse = await fetchWithTimeout({
-		fetchImpl,
-		input: audioUrl,
-		timeoutMessage: "Legacy TTS audio download timed out",
-		timeoutMs,
-	});
+	let audioResponse: Response;
+
+	try {
+		audioResponse = await fetchWithTimeout({
+			fetchImpl,
+			input: audioUrl,
+			timeoutMessage: "Legacy TTS audio download timed out",
+			timeoutMs,
+		});
+	} catch (error) {
+		throw wrapLegacyUpstreamError({ error });
+	}
 
 	if (!audioResponse.ok) {
 		throw new TtsError({
