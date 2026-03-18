@@ -44,6 +44,10 @@ export async function POST(request: NextRequest) {
 				case "EXTERNAL_TTS_UPSTREAM":
 				case "LEGACY_TTS_UPSTREAM":
 					return NextResponse.json({ error: message }, { status: 502 });
+				default: {
+					const exhaustiveCode: never = error.code;
+					throw new Error(`Unhandled TTS error code: ${exhaustiveCode}`);
+				}
 			}
 		}
 

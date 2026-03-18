@@ -38,6 +38,15 @@ describe("POST /api/tts/generate", () => {
 		console.error = originalConsoleError;
 	});
 
+	test("returns base64 audio for successful synthesis", async () => {
+		const response = await POST(createRequest({ text: "hello" }) as never);
+
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({
+			audio: "AQID",
+		});
+	});
+
 	test("returns 502 for structured legacy upstream errors without relying on message prefixes", async () => {
 		synthesizeImpl = async () => {
 			throw Object.assign(new Error("legacy fallback audio download failed"), {
