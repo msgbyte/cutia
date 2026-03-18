@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { fetchWithTimeout, type FetchLike } from "./fetch-with-timeout";
+import { TtsError } from "./errors";
 
 const LEGACY_TTS_API_BASE = "https://api.milorapart.top/apis/mbAIsc";
 const LEGACY_TTS_ALLOWED_AUDIO_HOSTS = new Set(["api.milorapart.top"]);
@@ -31,7 +32,10 @@ export async function synthesizeSpeechWithLegacyProvider({
 	const upstreamUrl = `${LEGACY_TTS_API_BASE}?${query}`;
 
 	if (upstreamUrl.length > LEGACY_TTS_MAX_URL_LENGTH) {
-		throw new Error("Legacy TTS text is too long for GET fallback");
+		throw new TtsError({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: "Legacy TTS text is too long for GET fallback",
+		});
 	}
 
 	const upstreamResponse = await fetchWithTimeout({
@@ -42,14 +46,20 @@ export async function synthesizeSpeechWithLegacyProvider({
 	});
 
 	if (!upstreamResponse.ok) {
-		throw new Error(`Legacy TTS request failed: ${upstreamResponse.status}`);
+		throw new TtsError({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: `Legacy TTS request failed: ${upstreamResponse.status}`,
+		});
 	}
 
 	const upstreamJson = await upstreamResponse.json().catch(() => null);
 	const parsed = legacyResponseSchema.safeParse(upstreamJson);
 
 	if (!parsed.success || parsed.data.code !== 200) {
-		throw new Error("Legacy TTS generation failed");
+		throw new TtsError({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: "Legacy TTS generation failed",
+		});
 	}
 
 	const audioUrl = new URL(parsed.data.url);
@@ -58,7 +68,10 @@ export async function synthesizeSpeechWithLegacyProvider({
 		audioUrl.protocol !== "https:" ||
 		!LEGACY_TTS_ALLOWED_AUDIO_HOSTS.has(audioUrl.hostname)
 	) {
-		throw new Error("Legacy TTS returned an unexpected audio URL");
+		throw new TtsError({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: "Legacy TTS returned an unexpected audio URL",
+		});
 	}
 
 	const audioResponse = await fetchWithTimeout({
@@ -69,9 +82,10 @@ export async function synthesizeSpeechWithLegacyProvider({
 	});
 
 	if (!audioResponse.ok) {
-		throw new Error(
-			`Legacy TTS audio download failed: ${audioResponse.status}`,
-		);
+		throw new TtsError({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: `Legacy TTS audio download failed: ${audioResponse.status}`,
+		});
 	}
 
 	const contentType = audioResponse.headers.get("content-type") ?? "";
@@ -81,15 +95,19 @@ export async function synthesizeSpeechWithLegacyProvider({
 		!mimeType.startsWith("audio/") &&
 		mimeType !== "application/octet-stream"
 	) {
-		throw new Error(
-			`Legacy TTS returned non-audio content: ${contentType || "(no content-type)"}`,
-		);
+		throw new TtsError({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: `Legacy TTS returned non-audio content: ${contentType || "(no content-type)"}`,
+		});
 	}
 
 	const audio = await audioResponse.arrayBuffer();
 
 	if (audio.byteLength === 0) {
-		throw new Error("Legacy TTS returned empty audio");
+		throw new TtsError({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: "Legacy TTS returned empty audio",
+		});
 	}
 
 	return audio;
