@@ -74,4 +74,17 @@ describe("synthesizeSpeechWithFallback", () => {
 		expect(openAiCalled).toBe(false);
 		expect(legacyCalled).toBe(false);
 	});
+
+	test("rethrows missing external config with a structured error code", async () => {
+		await expect(
+			synthesizeSpeechWithFallback({
+				env: {},
+				text: "hello",
+				voice: "default",
+			}),
+		).rejects.toMatchObject({
+			code: "EXTERNAL_TTS_CONFIG",
+			message: "External TTS is not configured",
+		});
+	});
 });
