@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { TtsError } from "./errors";
 import { synthesizeSpeechWithFallback } from "./provider";
 
 describe("synthesizeSpeechWithFallback", () => {
@@ -24,7 +25,7 @@ describe("synthesizeSpeechWithFallback", () => {
 		expect(legacyCalled).toBe(false);
 	});
 
-	test("falls back to the legacy provider when the configured provider is unsupported", async () => {
+	test("falls back to the legacy provider for structured external upstream errors", async () => {
 		let legacyCalled = false;
 
 		const result = await synthesizeSpeechWithFallback({
@@ -36,9 +37,11 @@ describe("synthesizeSpeechWithFallback", () => {
 			text: "hello",
 			voice: "default",
 			openAiSynthesize: async () => {
-				throw new Error(
-					"External TTS request failed: Expected audio response, received text/html; charset=utf-8",
-				);
+				throw new TtsError({
+					code: "EXTERNAL_TTS_UPSTREAM",
+					message:
+						"External TTS request failed: Expected audio response, received text/html; charset=utf-8",
+				});
 			},
 			legacySynthesize: async ({ text }) => {
 				legacyCalled = true;
@@ -49,6 +52,31 @@ describe("synthesizeSpeechWithFallback", () => {
 
 		expect(Array.from(new Uint8Array(result))).toEqual([7, 8, 9]);
 		expect(legacyCalled).toBe(true);
+	});
+
+	test("rethrows unexpected external provider errors instead of silently falling back", async () => {
+		let legacyCalled = false;
+
+		await expect(
+			synthesizeSpeechWithFallback({
+				env: {
+					API_BASE_URL: "https://example.com/v1",
+					API_MODEL: "tts-1",
+					API_KEY: "secret",
+				},
+				text: "hello",
+				voice: "default",
+				openAiSynthesize: async () => {
+					throw new Error("unexpected provider failure");
+				},
+				legacySynthesize: async () => {
+					legacyCalled = true;
+					return Uint8Array.from([7, 8, 9]).buffer;
+				},
+			}),
+		).rejects.toThrow("unexpected provider failure");
+
+		expect(legacyCalled).toBe(false);
 	});
 
 	test("rethrows missing external config instead of silently falling back", async () => {
