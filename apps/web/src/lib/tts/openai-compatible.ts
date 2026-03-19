@@ -264,12 +264,18 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 		}
 	}
 
+	if (!lastErrorResponse) {
+		throw new Error(
+			"Expected external TTS to capture an upstream response before failing",
+		);
+	}
+
 	throw new TtsError({
 		code: "EXTERNAL_TTS_UPSTREAM",
 		message: `External TTS request failed: ${await getUpstreamErrorMessage({
-			response: lastErrorResponse ?? new Response(null, { status: 500 }),
+			response: lastErrorResponse,
 		})}`,
-		retryable: isRetryableStatus(lastErrorResponse?.status),
-		status: lastErrorResponse?.status,
+		retryable: isRetryableStatus(lastErrorResponse.status),
+		status: lastErrorResponse.status,
 	});
 }

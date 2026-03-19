@@ -2,6 +2,16 @@ import { describe, expect, test } from "bun:test";
 import { synthesizeSpeechWithLegacyProvider } from "./legacy";
 
 describe("synthesizeSpeechWithLegacyProvider", () => {
+	const TEST_TIMEOUT_MS = 50;
+	const LEGACY_AUDIO_URL = "https://api.milorapart.top/voice/test.mp3";
+
+	function legacyMetadataOk(url = LEGACY_AUDIO_URL): Response {
+		return Response.json({
+			code: 200,
+			url,
+		});
+	}
+
 	test("rejects audio urls outside the expected https host allowlist", async () => {
 		const calls: string[] = [];
 
@@ -10,10 +20,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 				text: "hello",
 				fetchImpl: async (input) => {
 					calls.push(String(input));
-					return Response.json({
-						code: 200,
-						url: "http://127.0.0.1/internal.mp3",
-					});
+					return legacyMetadataOk("http://127.0.0.1/internal.mp3");
 				},
 			}),
 		).rejects.toThrow("Legacy TTS returned an unexpected audio URL");
@@ -27,10 +34,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 				text: "hello",
 				fetchImpl: async (input) => {
 					if (String(input).includes("/apis/mbAIsc?")) {
-						return Response.json({
-							code: 200,
-							url: "https://api.milorapart.top/voice/test.mp3",
-						});
+						return legacyMetadataOk();
 					}
 
 					return new Response("<html></html>", {
@@ -48,10 +52,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 				text: "hello",
 				fetchImpl: async (input) => {
 					if (String(input).includes("/apis/mbAIsc?")) {
-						return Response.json({
-							code: 200,
-							url: "https://api.milorapart.top/voice/test.mp3",
-						});
+						return legacyMetadataOk();
 					}
 
 					return new Response(Uint8Array.from([1, 2, 3]), {
@@ -67,10 +68,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 			text: "hello",
 			fetchImpl: async (input) => {
 				if (String(input).includes("/apis/mbAIsc?")) {
-					return Response.json({
-						code: 200,
-						url: "https://api.milorapart.top/voice/test.mp3",
-					});
+					return legacyMetadataOk();
 				}
 
 				return new Response(Uint8Array.from([1, 2, 3]), {
@@ -91,10 +89,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 				text: "hello",
 				fetchImpl: async (input, init) => {
 					if (String(input).includes("/apis/mbAIsc?")) {
-						return Response.json({
-							code: 200,
-							url: "https://api.milorapart.top/voice/test.mp3",
-						});
+						return legacyMetadataOk();
 					}
 
 					sawManualRedirect = init?.redirect === "manual";
@@ -122,10 +117,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 			text: "hello",
 			fetchImpl: async (input, init) => {
 				if (String(input).includes("/apis/mbAIsc?")) {
-					return Response.json({
-						code: 200,
-						url: "https://api.milorapart.top/voice/test.mp3",
-					});
+					return legacyMetadataOk();
 				}
 
 				downloadCallCount++;
@@ -164,10 +156,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 				text: "中".repeat(400),
 				fetchImpl: async () => {
 					fetchCalled = true;
-					return Response.json({
-						code: 200,
-						url: "https://api.milorapart.top/voice/test.mp3",
-					});
+					return legacyMetadataOk();
 				},
 			}),
 		).rejects.toThrow("Legacy TTS text is too long for GET fallback");
@@ -179,7 +168,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 		await expect(
 			synthesizeSpeechWithLegacyProvider({
 				text: "hello",
-				timeoutMs: 10,
+				timeoutMs: TEST_TIMEOUT_MS,
 				fetchImpl: async (_input, init) =>
 					new Promise((_resolve, reject) => {
 						init?.signal?.addEventListener(
@@ -201,15 +190,12 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 		await expect(
 			synthesizeSpeechWithLegacyProvider({
 				text: "hello",
-				timeoutMs: 10,
+				timeoutMs: TEST_TIMEOUT_MS,
 				fetchImpl: async (_input, init) => {
 					callCount++;
 
 					if (callCount === 1) {
-						return Response.json({
-							code: 200,
-							url: "https://api.milorapart.top/voice/test.mp3",
-						});
+						return legacyMetadataOk();
 					}
 
 					return new Promise((_resolve, reject) => {
