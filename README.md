@@ -72,6 +72,18 @@ UPSTASH_REDIS_REST_TOKEN="cutia_redis_token"
 NODE_ENV="development"
 ```
 
+Optional TTS env values:
+
+```bash
+EXTERNAL_TTS_API_BASE_URL="https://your-tts-provider.example.com/v1"
+EXTERNAL_TTS_API_MODEL="your_tts_model"
+EXTERNAL_TTS_API_KEY="your_tts_api_key"
+```
+
+Cutia prefers `EXTERNAL_TTS_API_*` for external speech synthesis. The legacy
+`API_BASE_URL` / `API_MODEL` / `API_KEY` names are still accepted as
+compatibility aliases when the namespaced variables are absent.
+
 To enable authentication, also start PostgreSQL and add these env values:
 
 ```bash
