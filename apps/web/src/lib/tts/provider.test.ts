@@ -93,16 +93,12 @@ describe("synthesizeSpeechWithFallback", () => {
 				text: "hello",
 				voice: "default",
 				openAiSynthesize: async () => {
-					throw Object.assign(
-						new TtsError({
-							code: "EXTERNAL_TTS_UPSTREAM",
-							message: "External TTS request failed: invalid api key",
-						}),
-						{
-							retryable: false,
-							status: 401,
-						},
-					);
+					throw new TtsError({
+						code: "EXTERNAL_TTS_UPSTREAM",
+						message: "External TTS request failed: invalid api key",
+						retryable: false,
+						status: 401,
+					});
 				},
 				legacySynthesize: async () => {
 					legacyCalled = true;

@@ -96,4 +96,18 @@ describe("POST /api/tts/generate", () => {
 			error: "external config missing",
 		});
 	});
+
+	test("returns 500 for unexpected non-TtsError exceptions", async () => {
+		synthesizeImpl = async () => {
+			throw new Error("unexpected failure");
+		};
+
+		const response = await POST(createRequest({ text: "hello" }));
+
+		expect(response.status).toBe(500);
+		expect(await response.json()).toEqual({
+			error: "Internal server error",
+			detail: "unexpected failure",
+		});
+	});
 });
