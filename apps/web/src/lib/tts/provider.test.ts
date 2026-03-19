@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import { TtsError } from "./errors";
-import { synthesizeSpeechWithOpenAiCompatible } from "./openai-compatible";
 import { synthesizeSpeechWithFallback } from "./provider";
 
 describe("synthesizeSpeechWithFallback", () => {
@@ -126,17 +125,13 @@ describe("synthesizeSpeechWithFallback", () => {
 				},
 				text: "hello",
 				voice: "default",
-				openAiSynthesize: ({ config, text, voice }) =>
-					synthesizeSpeechWithOpenAiCompatible({
-						config,
-						text,
-						voice,
-						fetchImpl: async () =>
-							new Response("<!doctype html>", {
-								status: 200,
-								headers: { "Content-Type": "text/html; charset=utf-8" },
-							}),
-					}),
+				openAiSynthesize: async () => {
+					throw new TtsError({
+						code: "EXTERNAL_TTS_UPSTREAM",
+						message: "External TTS websocket request failed: no available account",
+						retryable: false,
+					});
+				},
 				legacySynthesize: async () => {
 					legacyCalled = true;
 					return Uint8Array.from([7, 8, 9]).buffer;
@@ -144,7 +139,7 @@ describe("synthesizeSpeechWithFallback", () => {
 			}),
 		).rejects.toMatchObject({
 			code: "EXTERNAL_TTS_UPSTREAM",
-			message: "Expected audio response, received text/html; charset=utf-8",
+			message: "External TTS websocket request failed: no available account",
 			retryable: false,
 		});
 

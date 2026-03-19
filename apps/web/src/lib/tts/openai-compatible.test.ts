@@ -5,6 +5,52 @@ import {
 	synthesizeSpeechWithOpenAiCompatible,
 } from "./openai-compatible";
 
+type WebSocketListenerMap = {
+	close: Array<(event: { code: number; reason: string }) => void>;
+	error: Array<(event: { message?: string; type?: string }) => void>;
+	message: Array<(event: { data: unknown }) => void>;
+	open: Array<() => void>;
+};
+
+class FakeWebSocket {
+	public readonly sentMessages: string[] = [];
+	private readonly listeners: WebSocketListenerMap = {
+		close: [],
+		error: [],
+		message: [],
+		open: [],
+	};
+
+	constructor(
+		public readonly url: string,
+		public readonly init?: { headers?: Record<string, string> },
+	) {}
+
+	addEventListener<K extends keyof WebSocketListenerMap>(
+		type: K,
+		listener: WebSocketListenerMap[K][number],
+	) {
+		this.listeners[type].push(listener);
+	}
+
+	close(code = 1000, reason = "") {
+		this.emit("close", { code, reason });
+	}
+
+	emit<K extends keyof WebSocketListenerMap>(
+		type: K,
+		event: Parameters<WebSocketListenerMap[K][number]>[0],
+	) {
+		for (const listener of this.listeners[type]) {
+			listener(event as never);
+		}
+	}
+
+	send(message: string) {
+		this.sentMessages.push(message);
+	}
+}
+
 describe("getExternalTtsConfig", () => {
 	test("reads namespaced TTS config from environment", () => {
 		const config = getExternalTtsConfig({
@@ -236,9 +282,9 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 				text: "hello",
 				voice: "default",
 				fetchImpl: async () =>
-					new Response("<!doctype html>", {
+					new Response("not audio", {
 						status: 200,
-						headers: { "Content-Type": "text/html; charset=utf-8" },
+						headers: { "Content-Type": "text/plain; charset=utf-8" },
 					}),
 			}),
 		).rejects.toThrow("Expected audio response");
@@ -397,5 +443,127 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 					}),
 			}),
 		).rejects.toThrow('{"message":"bad request"}');
+	});
+
+	test("falls back to /responses websocket audio when /audio/speech returns 404", async () => {
+		const sockets: FakeWebSocket[] = [];
+		const synthesis = synthesizeSpeechWithOpenAiCompatible({
+			config: {
+				apiBaseUrl: "https://example.com/v1",
+				apiKey: "secret",
+				model: "tts-1",
+			},
+			text: "hello",
+			voice: "default",
+			createWebSocket: (url, init) => {
+				const socket = new FakeWebSocket(url, init);
+				sockets.push(socket);
+				return socket;
+			},
+			fetchImpl: async () => new Response("page not found", { status: 404 }),
+		});
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		expect(sockets).toHaveLength(1);
+		expect(sockets[0]?.url).toBe("wss://example.com/v1/responses");
+		expect(sockets[0]?.init?.headers?.Authorization).toBe("Bearer secret");
+
+		sockets[0]?.emit("open", undefined);
+		expect(JSON.parse(sockets[0]?.sentMessages[0] ?? "")).toEqual({
+			audio: { format: "mp3" },
+			input: "hello",
+			model: "tts-1",
+			output_modalities: ["audio"],
+			response: {
+				instructions: "hello",
+				modalities: ["audio"],
+				output_audio_format: "mp3",
+				voice: DEFAULT_EXTERNAL_TTS_VOICE,
+			},
+			type: "response.create",
+		});
+		sockets[0]?.emit("message", {
+			data: JSON.stringify({
+				type: "response.audio.delta",
+				delta: Buffer.from(Uint8Array.from([7, 8, 9])).toString("base64"),
+			}),
+		});
+		sockets[0]?.emit("message", {
+			data: JSON.stringify({ type: "response.completed" }),
+		});
+
+		expect(Array.from(new Uint8Array(await synthesis))).toEqual([7, 8, 9]);
+	});
+
+	test("falls back to /responses websocket audio when /audio/speech returns html", async () => {
+		const sockets: FakeWebSocket[] = [];
+		const synthesis = synthesizeSpeechWithOpenAiCompatible({
+			config: {
+				apiBaseUrl: "https://example.com/v1",
+				apiKey: "secret",
+				model: "tts-1",
+			},
+			text: "hello",
+			voice: "echo",
+			createWebSocket: (url, init) => {
+				const socket = new FakeWebSocket(url, init);
+				sockets.push(socket);
+				return socket;
+			},
+			fetchImpl: async () =>
+				new Response("<!doctype html>", {
+					status: 200,
+					headers: { "Content-Type": "text/html; charset=utf-8" },
+				}),
+		});
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		sockets[0]?.emit("open", undefined);
+		sockets[0]?.emit("message", {
+			data: JSON.stringify({
+				type: "response.output_audio.delta",
+				delta: Buffer.from(Uint8Array.from([1, 2, 3, 4])).toString("base64"),
+			}),
+		});
+		sockets[0]?.emit("message", {
+			data: JSON.stringify({ type: "response.done" }),
+		});
+
+		expect(Array.from(new Uint8Array(await synthesis))).toEqual([1, 2, 3, 4]);
+		expect(JSON.parse(sockets[0]?.sentMessages[0] ?? "").response.voice).toBe(
+			"echo",
+		);
+	});
+
+	test("surfaces websocket close reasons as structured upstream errors", async () => {
+		const sockets: FakeWebSocket[] = [];
+		const synthesis = synthesizeSpeechWithOpenAiCompatible({
+			config: {
+				apiBaseUrl: "https://example.com/v1",
+				apiKey: "secret",
+				model: "tts-1",
+			},
+			text: "hello",
+			voice: "default",
+			createWebSocket: (url, init) => {
+				const socket = new FakeWebSocket(url, init);
+				sockets.push(socket);
+				return socket;
+			},
+			fetchImpl: async () => new Response("page not found", { status: 404 }),
+		});
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		sockets[0]?.emit("open", undefined);
+		sockets[0]?.emit("close", {
+			code: 1013,
+			reason: "no available account",
+		});
+
+		await expect(synthesis).rejects.toMatchObject({
+			code: "EXTERNAL_TTS_UPSTREAM",
+			message: "External TTS websocket request failed: no available account",
+			retryable: false,
+		});
 	});
 });

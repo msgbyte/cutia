@@ -12,6 +12,7 @@ const externalTtsConfigSchema = z.object({
 	API_KEY: z.string().min(1),
 });
 const EXTERNAL_TTS_TIMEOUT_MS = 15_000;
+const EXTERNAL_TTS_RESPONSES_AUDIO_FORMAT = "mp3";
 
 export { DEFAULT_EXTERNAL_TTS_VOICE };
 
@@ -20,6 +21,58 @@ export interface ExternalTtsConfig {
 	apiKey: string;
 	model: string;
 }
+
+interface ExternalTtsWebSocketMessageEvent {
+	data: unknown;
+}
+
+interface ExternalTtsWebSocketErrorEvent {
+	message?: string;
+	type?: string;
+}
+
+interface ExternalTtsWebSocketCloseEvent {
+	code: number;
+	reason: string;
+}
+
+export interface ExternalTtsWebSocketLike {
+	addEventListener(
+		type: "close",
+		listener: (event: ExternalTtsWebSocketCloseEvent) => void,
+	): void;
+	addEventListener(
+		type: "error",
+		listener: (event: ExternalTtsWebSocketErrorEvent) => void,
+	): void;
+	addEventListener(
+		type: "message",
+		listener: (event: ExternalTtsWebSocketMessageEvent) => void,
+	): void;
+	addEventListener(type: "open", listener: () => void): void;
+	close(code?: number, reason?: string): void;
+	removeEventListener?(
+		type: "close",
+		listener: (event: ExternalTtsWebSocketCloseEvent) => void,
+	): void;
+	removeEventListener?(
+		type: "error",
+		listener: (event: ExternalTtsWebSocketErrorEvent) => void,
+	): void;
+	removeEventListener?(
+		type: "message",
+		listener: (event: ExternalTtsWebSocketMessageEvent) => void,
+	): void;
+	removeEventListener?(type: "open", listener: () => void): void;
+	send(data: string): void;
+}
+
+export type ExternalTtsWebSocketFactory = (
+	url: string,
+	init?: {
+		headers?: Record<string, string>;
+	},
+) => ExternalTtsWebSocketLike;
 
 function resolveExternalTtsEnv({
 	env,
@@ -169,14 +222,343 @@ function getSpeechEndpointUrls({
 	return [...new Set(urls)];
 }
 
+function getResponsesEndpointUrls({
+	apiBaseUrl,
+}: {
+	apiBaseUrl: string;
+}): string[] {
+	const normalizedBaseUrl = apiBaseUrl.replace(/\/+$/, "");
+	const baseWithoutV1 = normalizedBaseUrl.endsWith("/v1")
+		? normalizedBaseUrl.slice(0, -3)
+		: normalizedBaseUrl;
+	const baseWithV1 = normalizedBaseUrl.endsWith("/v1")
+		? normalizedBaseUrl
+		: `${normalizedBaseUrl}/v1`;
+	const urls = [`${baseWithV1}/responses`, `${baseWithoutV1}/responses`];
+
+	return [...new Set(urls)];
+}
+
+function toWebSocketUrl({ url }: { url: string }): string {
+	const parsed = new URL(url);
+	parsed.protocol = parsed.protocol === "https:" ? "wss:" : "ws:";
+	return parsed.toString();
+}
+
+function isAudioContentType({ contentType }: { contentType: string }): boolean {
+	const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+
+	return mimeType.startsWith("audio/") || mimeType === "application/octet-stream";
+}
+
+function shouldTryResponsesWebSocket({
+	response,
+}: {
+	response: Response;
+}): boolean {
+	if (response.status === 404 || response.status === 405 || response.status === 426) {
+		return true;
+	}
+
+	if (!response.ok) {
+		return false;
+	}
+
+	const contentType = response.headers.get("content-type") ?? "";
+	const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+
+	return mimeType === "text/html";
+}
+
+function getResponsesWebSocketCloseRetryable({
+	code,
+	reason,
+}: {
+	code: number;
+	reason: string;
+}): boolean {
+	const normalizedReason = reason.trim().toLowerCase();
+
+	if (
+		normalizedReason.includes("no available account") ||
+		normalizedReason.includes("required") ||
+		normalizedReason.includes("unsupported")
+	) {
+		return false;
+	}
+
+	return code === 1006 || code === 1011 || code === 1012 || code === 1013;
+}
+
+function getResponsesWebSocketError({
+	code,
+	reason,
+}: {
+	code: number;
+	reason: string;
+}): TtsError {
+	return new TtsError({
+		code: "EXTERNAL_TTS_UPSTREAM",
+		message: `External TTS websocket request failed: ${
+			reason || `WebSocket closed (${code})`
+		}`,
+		retryable: getResponsesWebSocketCloseRetryable({ code, reason }),
+	});
+}
+
+function getResponseEventErrorMessage({
+	event,
+}: {
+	event: Record<string, unknown>;
+}): string | null {
+	if (typeof event.message === "string" && event.message.trim()) {
+		return event.message;
+	}
+
+	if (
+		typeof event.error === "object" &&
+		event.error !== null &&
+		"message" in event.error &&
+		typeof event.error.message === "string" &&
+		event.error.message.trim()
+	) {
+		return event.error.message;
+	}
+
+	return null;
+}
+
+function createExternalTtsWebSocket(
+	url: string,
+	init?: { headers?: Record<string, string> },
+): ExternalTtsWebSocketLike {
+	type NodeCompatibleWebSocket = new (
+		url: string,
+		init?: { headers?: Record<string, string> },
+	) => ExternalTtsWebSocketLike;
+
+	const WebSocketCtor =
+		globalThis.WebSocket as unknown as NodeCompatibleWebSocket;
+
+	return new WebSocketCtor(url, init);
+}
+
+async function synthesizeSpeechWithResponsesWebSocket({
+	config,
+	createWebSocket = createExternalTtsWebSocket,
+	text,
+	voice,
+}: {
+	config: ExternalTtsConfig;
+	createWebSocket?: ExternalTtsWebSocketFactory;
+	text: string;
+	voice?: string;
+}): Promise<ArrayBuffer> {
+	const endpointUrl = toWebSocketUrl({
+		url:
+			getResponsesEndpointUrls({ apiBaseUrl: config.apiBaseUrl })[0] ??
+			`${config.apiBaseUrl.replace(/\/+$/, "")}/responses`,
+	});
+	const audioChunks: Uint8Array[] = [];
+
+	return await new Promise<ArrayBuffer>((resolve, reject) => {
+		const socket = createWebSocket(endpointUrl, {
+			headers: {
+				Authorization: `Bearer ${config.apiKey}`,
+			},
+		});
+		let settled = false;
+
+		const cleanup = () => {
+			socket.removeEventListener?.("close", handleClose);
+			socket.removeEventListener?.("error", handleError);
+			socket.removeEventListener?.("message", handleMessage);
+			socket.removeEventListener?.("open", handleOpen);
+		};
+
+		const finish = ({
+			error,
+			value,
+		}: {
+			error?: TtsError;
+			value?: ArrayBuffer;
+		}) => {
+			if (settled) {
+				return;
+			}
+
+			settled = true;
+			cleanup();
+
+			try {
+				socket.close();
+			} catch {
+				// Best effort cleanup only.
+			}
+
+			if (error) {
+				reject(error);
+				return;
+			}
+
+			resolve(value ?? new ArrayBuffer(0));
+		};
+
+		const handleOpen = () => {
+			try {
+				socket.send(
+					JSON.stringify({
+						audio: {
+							format: EXTERNAL_TTS_RESPONSES_AUDIO_FORMAT,
+						},
+						input: text,
+						model: config.model,
+						output_modalities: ["audio"],
+						response: {
+							instructions: text,
+							modalities: ["audio"],
+							output_audio_format: EXTERNAL_TTS_RESPONSES_AUDIO_FORMAT,
+							voice: resolveVoice({ voice }),
+						},
+						type: "response.create",
+					}),
+				);
+			} catch (error) {
+				finish({
+					error: wrapExternalUpstreamError({ error }),
+				});
+			}
+		};
+
+		const handleMessage = async ({
+			data,
+		}: ExternalTtsWebSocketMessageEvent) => {
+			try {
+				if (data instanceof Blob) {
+					audioChunks.push(new Uint8Array(await data.arrayBuffer()));
+					return;
+				}
+
+				if (data instanceof ArrayBuffer) {
+					audioChunks.push(new Uint8Array(data));
+					return;
+				}
+
+				if (ArrayBuffer.isView(data)) {
+					audioChunks.push(
+						new Uint8Array(
+							data.buffer.slice(
+								data.byteOffset,
+								data.byteOffset + data.byteLength,
+							),
+						),
+					);
+					return;
+				}
+
+				if (typeof data !== "string") {
+					return;
+				}
+
+				const event = JSON.parse(data) as Record<string, unknown>;
+				const type = typeof event.type === "string" ? event.type : "";
+
+				if (
+					type === "response.audio.delta" ||
+					type === "response.output_audio.delta"
+				) {
+					if (typeof event.delta === "string" && event.delta.length > 0) {
+						audioChunks.push(Uint8Array.from(Buffer.from(event.delta, "base64")));
+					}
+					return;
+				}
+
+				if (type === "response.completed" || type === "response.done") {
+					const audio = Buffer.concat(
+						audioChunks.map((chunk) => Buffer.from(chunk)),
+					);
+
+					if (audio.byteLength === 0) {
+						finish({
+							error: new TtsError({
+								code: "EXTERNAL_TTS_UPSTREAM",
+								message: "External TTS returned empty audio",
+								retryable: false,
+							}),
+						});
+						return;
+					}
+
+					finish({
+						value: audio.buffer.slice(
+							audio.byteOffset,
+							audio.byteOffset + audio.byteLength,
+						),
+					});
+					return;
+				}
+
+				if (
+					type === "error" ||
+					type === "response.error" ||
+					type === "response.failed" ||
+					type === "response.incomplete"
+				) {
+					finish({
+						error: new TtsError({
+							code: "EXTERNAL_TTS_UPSTREAM",
+							message:
+								getResponseEventErrorMessage({ event }) ??
+								"External TTS websocket request failed",
+							retryable: false,
+						}),
+					});
+				}
+			} catch (error) {
+				finish({
+					error: wrapExternalUpstreamError({ error }),
+				});
+			}
+		};
+
+		const handleError = (event: ExternalTtsWebSocketErrorEvent) => {
+			finish({
+				error: new TtsError({
+					code: "EXTERNAL_TTS_UPSTREAM",
+					message:
+						event.message?.trim() || "External TTS websocket request failed",
+					retryable: true,
+				}),
+			});
+		};
+
+		const handleClose = ({ code, reason }: ExternalTtsWebSocketCloseEvent) => {
+			if (settled) {
+				return;
+			}
+
+			finish({
+				error: getResponsesWebSocketError({ code, reason }),
+			});
+		};
+
+		socket.addEventListener("open", handleOpen);
+		socket.addEventListener("message", handleMessage);
+		socket.addEventListener("error", handleError);
+		socket.addEventListener("close", handleClose);
+	});
+}
+
 export async function synthesizeSpeechWithOpenAiCompatible({
 	config,
+	createWebSocket = createExternalTtsWebSocket,
 	text,
 	voice,
 	fetchImpl = fetch,
 	timeoutMs = EXTERNAL_TTS_TIMEOUT_MS,
 }: {
 	config: ExternalTtsConfig;
+	createWebSocket?: ExternalTtsWebSocketFactory;
 	text: string;
 	voice?: string;
 	fetchImpl?: FetchLike;
@@ -218,12 +600,12 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 
 		if (response.ok) {
 			const contentType = response.headers.get("content-type") ?? "";
-			const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+			if (!isAudioContentType({ contentType })) {
+				if (shouldTryResponsesWebSocket({ response })) {
+					lastErrorResponse = response;
+					break;
+				}
 
-			if (
-				!mimeType.startsWith("audio/") &&
-				mimeType !== "application/octet-stream"
-			) {
 				throw new TtsError({
 					code: "EXTERNAL_TTS_UPSTREAM",
 					message: `Expected audio response, received ${contentType || "(no content-type)"}`,
@@ -262,6 +644,18 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 		if (response.status !== 404) {
 			break;
 		}
+	}
+
+	if (
+		lastErrorResponse &&
+		shouldTryResponsesWebSocket({ response: lastErrorResponse })
+	) {
+		return synthesizeSpeechWithResponsesWebSocket({
+			config,
+			createWebSocket,
+			text,
+			voice,
+		});
 	}
 
 	if (!lastErrorResponse) {
