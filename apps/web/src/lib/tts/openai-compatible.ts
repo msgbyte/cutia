@@ -276,6 +276,18 @@ function shouldTryResponsesWebSocket({
 	return mimeType === "text/html";
 }
 
+async function cancelResponseBody({
+	response,
+}: {
+	response: Response;
+}): Promise<void> {
+	try {
+		await response.body?.cancel();
+	} catch {
+		// Best-effort cleanup only.
+	}
+}
+
 function getResponsesWebSocketCloseRetryable({
 	code,
 	reason,
@@ -610,9 +622,11 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 			if (!isAudioContentType({ contentType })) {
 				if (shouldTryResponsesWebSocket({ response })) {
 					lastErrorResponse = response;
+					await cancelResponseBody({ response });
 					break;
 				}
 
+				await cancelResponseBody({ response });
 				throw new TtsError({
 					code: "EXTERNAL_TTS_UPSTREAM",
 					message: `Expected audio response, received ${contentType || "(no content-type)"}`,
@@ -651,6 +665,8 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 		if (response.status !== 404) {
 			break;
 		}
+
+		await cancelResponseBody({ response });
 	}
 
 	if (

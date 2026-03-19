@@ -4,12 +4,17 @@ import { synthesizeSpeechWithLegacyProvider } from "./legacy";
 describe("synthesizeSpeechWithLegacyProvider", () => {
 	const TEST_TIMEOUT_MS = 50;
 	const LEGACY_AUDIO_URL = "https://api.milorapart.top/voice/test.mp3";
+	const LEGACY_METADATA_ROUTE = "/apis/mbAIsc?";
 
 	function legacyMetadataOk(url = LEGACY_AUDIO_URL): Response {
 		return Response.json({
 			code: 200,
 			url,
 		});
+	}
+
+	function isLegacyMetadataRequest(input: RequestInfo | URL): boolean {
+		return String(input).includes(LEGACY_METADATA_ROUTE);
 	}
 
 	test("rejects audio urls outside the expected https host allowlist", async () => {
@@ -33,7 +38,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 			synthesizeSpeechWithLegacyProvider({
 				text: "hello",
 				fetchImpl: async (input) => {
-					if (String(input).includes("/apis/mbAIsc?")) {
+					if (isLegacyMetadataRequest(input)) {
 						return legacyMetadataOk();
 					}
 
@@ -51,7 +56,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 			synthesizeSpeechWithLegacyProvider({
 				text: "hello",
 				fetchImpl: async (input) => {
-					if (String(input).includes("/apis/mbAIsc?")) {
+					if (isLegacyMetadataRequest(input)) {
 						return legacyMetadataOk();
 					}
 
@@ -67,7 +72,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 		const audio = await synthesizeSpeechWithLegacyProvider({
 			text: "hello",
 			fetchImpl: async (input) => {
-				if (String(input).includes("/apis/mbAIsc?")) {
+				if (isLegacyMetadataRequest(input)) {
 					return legacyMetadataOk();
 				}
 
@@ -88,7 +93,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 			synthesizeSpeechWithLegacyProvider({
 				text: "hello",
 				fetchImpl: async (input, init) => {
-					if (String(input).includes("/apis/mbAIsc?")) {
+					if (isLegacyMetadataRequest(input)) {
 						return legacyMetadataOk();
 					}
 
@@ -116,7 +121,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 		const audio = await synthesizeSpeechWithLegacyProvider({
 			text: "hello",
 			fetchImpl: async (input, init) => {
-				if (String(input).includes("/apis/mbAIsc?")) {
+				if (isLegacyMetadataRequest(input)) {
 					return legacyMetadataOk();
 				}
 

@@ -238,6 +238,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 
 	test("falls back to the root audio speech path when the v1 path returns 404", async () => {
 		const calls: string[] = [];
+		const cancelledResponses: string[] = [];
 
 		const audio = await synthesizeSpeechWithOpenAiCompatible({
 			config: {
@@ -252,7 +253,16 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 				calls.push(url);
 
 				if (url === "https://example.com/v1/audio/speech") {
-					return new Response("page not found", { status: 404 });
+					return {
+						body: {
+							cancel: async () => {
+								cancelledResponses.push(url);
+							},
+						},
+						headers: new Headers(),
+						ok: false,
+						status: 404,
+					} as Response;
 				}
 
 				return new Response(Uint8Array.from([9, 8, 7]), {
@@ -267,6 +277,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 			"https://example.com/v1/audio/speech",
 			"https://example.com/audio/speech",
 		]);
+		expect(cancelledResponses).toEqual(["https://example.com/v1/audio/speech"]);
 	});
 
 	test("tries the /v1 speech endpoint first when the base url is root-level", async () => {
@@ -300,6 +311,8 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 	});
 
 	test("rejects non-audio success responses", async () => {
+		let cancelCalled = false;
+
 		await expect(
 			synthesizeSpeechWithOpenAiCompatible({
 				config: {
@@ -310,12 +323,22 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 				text: "hello",
 				voice: "default",
 				fetchImpl: async () =>
-					new Response("not audio", {
+					({
+						body: {
+							cancel: async () => {
+								cancelCalled = true;
+							},
+						},
+						headers: new Headers({
+							"Content-Type": "text/plain; charset=utf-8",
+						}),
+						ok: true,
 						status: 200,
-						headers: { "Content-Type": "text/plain; charset=utf-8" },
-					}),
+					}) as Response,
 			}),
 		).rejects.toThrow("Expected audio response");
+
+		expect(cancelCalled).toBe(true);
 	});
 
 	test("rejects success responses when the content-type header is missing", async () => {
@@ -525,6 +548,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 
 	test("falls back to /responses websocket audio when /audio/speech returns html", async () => {
 		const sockets: FakeWebSocket[] = [];
+		let cancelCalled = false;
 		const synthesis = synthesizeSpeechWithOpenAiCompatible({
 			config: {
 				apiBaseUrl: "https://example.com/v1",
@@ -539,13 +563,22 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 				return socket;
 			},
 			fetchImpl: async () =>
-				new Response("<!doctype html>", {
+				({
+					body: {
+						cancel: async () => {
+							cancelCalled = true;
+						},
+					},
+					headers: new Headers({
+						"Content-Type": "text/html; charset=utf-8",
+					}),
+					ok: true,
 					status: 200,
-					headers: { "Content-Type": "text/html; charset=utf-8" },
-				}),
+				}) as Response,
 		});
 		await new Promise((resolve) => setTimeout(resolve, 0));
 
+		expect(cancelCalled).toBe(true);
 		sockets[0]?.emit("open");
 		sockets[0]?.emit("message", {
 			data: JSON.stringify({
