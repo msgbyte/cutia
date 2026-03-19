@@ -141,6 +141,7 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 					});
 				}
 
+				expect(init?.redirect).toBe("error");
 				expect(String(input)).toBe(
 					"https://api.milorapart.top/voice/test-redirected.mp3",
 				);

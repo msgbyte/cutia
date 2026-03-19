@@ -125,7 +125,7 @@ Expected: PASS
 
 **Step 2: 运行真实外部 TTS 验证**
 
-Run: `bun --eval '<补一段调用适配层的脚本>'`
+Run: `bun --eval 'import { getExternalTtsConfig, synthesizeSpeechWithOpenAiCompatible } from "./apps/web/src/lib/tts/openai-compatible.ts"; const config = getExternalTtsConfig({ env: process.env }); const audio = await synthesizeSpeechWithOpenAiCompatible({ config, text: "Cutia TTS probe", voice: "default" }); console.log(audio.byteLength);'`
 Expected: 输出非空音频字节长度，不打印密钥。
 
 **Step 3: 检查格式与类型**

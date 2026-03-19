@@ -82,7 +82,11 @@ export function getExternalTtsConfig({
 	}
 
 	try {
-		new URL(apiBaseUrl);
+		const url = new URL(apiBaseUrl);
+
+		if (url.protocol !== "http:" && url.protocol !== "https:") {
+			throw new Error("Unsupported protocol");
+		}
 	} catch {
 		throw new TtsError({
 			code: "EXTERNAL_TTS_CONFIG",
@@ -228,7 +232,18 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 				});
 			}
 
-			const audio = await response.arrayBuffer();
+			let audio: ArrayBuffer;
+
+			try {
+				audio = await response.arrayBuffer();
+			} catch (error) {
+				throw new TtsError({
+					code: "EXTERNAL_TTS_UPSTREAM",
+					message: `External TTS audio read failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+					retryable: false,
+					status: response.status,
+				});
+			}
 
 			if (audio.byteLength === 0) {
 				throw new TtsError({

@@ -91,6 +91,18 @@ describe("getExternalTtsConfig", () => {
 			}),
 		).toThrow("External TTS is not configured");
 	});
+
+	test("rejects non-http API_BASE_URL schemes", () => {
+		expect(() =>
+			getExternalTtsConfig({
+				env: {
+					EXTERNAL_TTS_API_BASE_URL: "mailto:tts@example.com",
+					EXTERNAL_TTS_API_MODEL: "tts-1",
+					EXTERNAL_TTS_API_KEY: "secret",
+				},
+			}),
+		).toThrow("External TTS is not configured");
+	});
 });
 
 describe("synthesizeSpeechWithOpenAiCompatible", () => {
@@ -267,6 +279,36 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		});
 
 		expect(Array.from(new Uint8Array(audio))).toEqual([1, 2, 3]);
+	});
+
+	test("wraps arrayBuffer read failures as non-retryable upstream errors", async () => {
+		const response = new Response(Uint8Array.from([1, 2, 3]), {
+			status: 200,
+			headers: { "Content-Type": "audio/mpeg" },
+		});
+		Object.defineProperty(response, "arrayBuffer", {
+			value: async () => {
+				throw new Error("stream failed");
+			},
+		});
+
+		await expect(
+			synthesizeSpeechWithOpenAiCompatible({
+				config: {
+					apiBaseUrl: "https://example.com/v1",
+					apiKey: "secret",
+					model: "tts-1",
+				},
+				text: "hello",
+				voice: "default",
+				fetchImpl: async () => response,
+			}),
+		).rejects.toMatchObject({
+			code: "EXTERNAL_TTS_UPSTREAM",
+			message: "External TTS audio read failed: stream failed",
+			retryable: false,
+			status: 200,
+		});
 	});
 
 	test("aborts upstream requests that exceed the timeout", async () => {
