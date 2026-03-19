@@ -248,7 +248,9 @@ function toWebSocketUrl({ url }: { url: string }): string {
 function isAudioContentType({ contentType }: { contentType: string }): boolean {
 	const mimeType = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
 
-	return mimeType.startsWith("audio/") || mimeType === "application/octet-stream";
+	return (
+		mimeType.startsWith("audio/") || mimeType === "application/octet-stream"
+	);
 }
 
 function shouldTryResponsesWebSocket({
@@ -256,7 +258,11 @@ function shouldTryResponsesWebSocket({
 }: {
 	response: Response;
 }): boolean {
-	if (response.status === 404 || response.status === 405 || response.status === 426) {
+	if (
+		response.status === 404 ||
+		response.status === 405 ||
+		response.status === 426
+	) {
 		return true;
 	}
 
@@ -468,7 +474,9 @@ async function synthesizeSpeechWithResponsesWebSocket({
 					type === "response.output_audio.delta"
 				) {
 					if (typeof event.delta === "string" && event.delta.length > 0) {
-						audioChunks.push(Uint8Array.from(Buffer.from(event.delta, "base64")));
+						audioChunks.push(
+							Uint8Array.from(Buffer.from(event.delta, "base64")),
+						);
 					}
 					return;
 				}

@@ -26,23 +26,51 @@ class FakeWebSocket {
 		public readonly init?: { headers?: Record<string, string> },
 	) {}
 
-	addEventListener<K extends keyof WebSocketListenerMap>(
-		type: K,
-		listener: WebSocketListenerMap[K][number],
+	addEventListener(
+		type: "close",
+		listener: WebSocketListenerMap["close"][number],
+	): void;
+	addEventListener(
+		type: "error",
+		listener: WebSocketListenerMap["error"][number],
+	): void;
+	addEventListener(
+		type: "message",
+		listener: WebSocketListenerMap["message"][number],
+	): void;
+	addEventListener(
+		type: "open",
+		listener: WebSocketListenerMap["open"][number],
+	): void;
+	addEventListener(
+		type: keyof WebSocketListenerMap,
+		listener: WebSocketListenerMap[keyof WebSocketListenerMap][number],
 	) {
-		this.listeners[type].push(listener);
+		(
+			this.listeners[type] as Array<
+				(
+					event?:
+						| { code: number; reason: string }
+						| { message?: string; type?: string }
+						| { data: unknown },
+				) => void
+			>
+		).push(listener as (event?: unknown) => void);
 	}
 
 	close(code = 1000, reason = "") {
 		this.emit("close", { code, reason });
 	}
 
-	emit<K extends keyof WebSocketListenerMap>(
-		type: K,
-		event: Parameters<WebSocketListenerMap[K][number]>[0],
-	) {
-		for (const listener of this.listeners[type]) {
-			listener(event as never);
+	emit(type: "close", event: { code: number; reason: string }): void;
+	emit(type: "error", event: { message?: string; type?: string }): void;
+	emit(type: "message", event: { data: unknown }): void;
+	emit(type: "open"): void;
+	emit(type: keyof WebSocketListenerMap, event?: unknown) {
+		for (const listener of this.listeners[type] as Array<
+			(event?: unknown) => void
+		>) {
+			listener(event);
 		}
 	}
 
@@ -468,7 +496,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		expect(sockets[0]?.url).toBe("wss://example.com/v1/responses");
 		expect(sockets[0]?.init?.headers?.Authorization).toBe("Bearer secret");
 
-		sockets[0]?.emit("open", undefined);
+		sockets[0]?.emit("open");
 		expect(JSON.parse(sockets[0]?.sentMessages[0] ?? "")).toEqual({
 			audio: { format: "mp3" },
 			input: "hello",
@@ -518,7 +546,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		});
 		await new Promise((resolve) => setTimeout(resolve, 0));
 
-		sockets[0]?.emit("open", undefined);
+		sockets[0]?.emit("open");
 		sockets[0]?.emit("message", {
 			data: JSON.stringify({
 				type: "response.output_audio.delta",
@@ -554,7 +582,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		});
 		await new Promise((resolve) => setTimeout(resolve, 0));
 
-		sockets[0]?.emit("open", undefined);
+		sockets[0]?.emit("open");
 		sockets[0]?.emit("close", {
 			code: 1013,
 			reason: "no available account",

@@ -128,7 +128,8 @@ describe("synthesizeSpeechWithFallback", () => {
 				openAiSynthesize: async () => {
 					throw new TtsError({
 						code: "EXTERNAL_TTS_UPSTREAM",
-						message: "External TTS websocket request failed: no available account",
+						message:
+							"External TTS websocket request failed: no available account",
 						retryable: false,
 					});
 				},
