@@ -21,6 +21,18 @@ export interface ExternalTtsConfig {
 	model: string;
 }
 
+function resolveExternalTtsEnv({
+	env,
+}: {
+	env: Record<string, string | undefined>;
+}): Record<"API_BASE_URL" | "API_MODEL" | "API_KEY", string | undefined> {
+	return {
+		API_BASE_URL: env.EXTERNAL_TTS_API_BASE_URL ?? env.API_BASE_URL,
+		API_MODEL: env.EXTERNAL_TTS_API_MODEL ?? env.API_MODEL,
+		API_KEY: env.EXTERNAL_TTS_API_KEY ?? env.API_KEY,
+	};
+}
+
 function isRetryableStatus(status: number | undefined): boolean {
 	if (status == null) {
 		return true;
@@ -47,7 +59,9 @@ export function getExternalTtsConfig({
 }: {
 	env: Record<string, string | undefined>;
 }): ExternalTtsConfig {
-	const parsed = externalTtsConfigSchema.safeParse(env);
+	const parsed = externalTtsConfigSchema.safeParse(
+		resolveExternalTtsEnv({ env }),
+	);
 
 	if (!parsed.success) {
 		throw new TtsError({

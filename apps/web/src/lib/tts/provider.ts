@@ -9,6 +9,9 @@ type TtsEnv = {
 	API_BASE_URL?: string;
 	API_MODEL?: string;
 	API_KEY?: string;
+	EXTERNAL_TTS_API_BASE_URL?: string;
+	EXTERNAL_TTS_API_MODEL?: string;
+	EXTERNAL_TTS_API_KEY?: string;
 };
 
 export async function synthesizeSpeechWithFallback({

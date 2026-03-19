@@ -140,6 +140,18 @@ export async function synthesizeSpeechWithLegacyProvider({
 				message: "Legacy TTS audio download redirected to an unexpected host",
 			});
 		}
+
+		try {
+			audioResponse = await fetchWithTimeout({
+				fetchImpl,
+				init: { redirect: "error" },
+				input: redirectUrl,
+				timeoutMessage: "Legacy TTS audio download timed out",
+				timeoutMs,
+			});
+		} catch (error) {
+			throw wrapLegacyUpstreamError({ error });
+		}
 	}
 
 	if (!audioResponse.ok) {

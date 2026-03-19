@@ -27,7 +27,8 @@ Expected: FAIL，原因是测试文件或实现不存在。
 
 **Step 3: 为后续实现准备最小配置面**
 
-- 在环境 schema 中加入 `API_BASE_URL`、`API_MODEL`、`API_KEY`
+- 在环境 schema 中加入 `EXTERNAL_TTS_API_BASE_URL`、`EXTERNAL_TTS_API_MODEL`、`EXTERNAL_TTS_API_KEY`
+- 兼容读取旧的 `API_BASE_URL`、`API_MODEL`、`API_KEY`，用于迁移与当前共享环境
 - 在 TTS 常量中定义默认 voice 与可选 voice 列表
 
 **Step 4: 运行定向测试**

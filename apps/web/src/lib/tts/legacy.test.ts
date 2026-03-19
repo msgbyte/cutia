@@ -115,6 +115,46 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 		expect(sawManualRedirect).toBe(true);
 	});
 
+	test("follows allowlisted redirects for legacy audio downloads", async () => {
+		let downloadCallCount = 0;
+
+		const audio = await synthesizeSpeechWithLegacyProvider({
+			text: "hello",
+			fetchImpl: async (input, init) => {
+				if (String(input).includes("/apis/mbAIsc?")) {
+					return Response.json({
+						code: 200,
+						url: "https://api.milorapart.top/voice/test.mp3",
+					});
+				}
+
+				downloadCallCount++;
+
+				if (downloadCallCount === 1) {
+					expect(init?.redirect).toBe("manual");
+
+					return new Response(null, {
+						status: 302,
+						headers: {
+							location: "https://api.milorapart.top/voice/test-redirected.mp3",
+						},
+					});
+				}
+
+				expect(String(input)).toBe(
+					"https://api.milorapart.top/voice/test-redirected.mp3",
+				);
+				return new Response(Uint8Array.from([4, 5, 6]), {
+					status: 200,
+					headers: { "Content-Type": "audio/mpeg" },
+				});
+			},
+		});
+
+		expect(downloadCallCount).toBe(2);
+		expect(Array.from(new Uint8Array(audio))).toEqual([4, 5, 6]);
+	});
+
 	test("rejects synthesis text that would exceed the legacy GET limit", async () => {
 		let fetchCalled = false;
 

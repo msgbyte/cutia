@@ -9,9 +9,9 @@ describe("synthesizeSpeechWithFallback", () => {
 
 		const result = await synthesizeSpeechWithFallback({
 			env: {
-				API_BASE_URL: "https://example.com/v1",
-				API_MODEL: "tts-1",
-				API_KEY: "secret",
+				EXTERNAL_TTS_API_BASE_URL: "https://example.com/v1",
+				EXTERNAL_TTS_API_MODEL: "tts-1",
+				EXTERNAL_TTS_API_KEY: "secret",
 			},
 			text: "hello",
 			voice: "default",

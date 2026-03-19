@@ -43,7 +43,8 @@
 
 优点：
 - 只需要一层薄适配，即可支持大量 OpenAI 兼容的 TTS 服务
-- 和当前运行环境提供的 `API_BASE_URL`、`API_MODEL`、`API_KEY` 直接对齐
+- 优先使用 `EXTERNAL_TTS_API_BASE_URL`、`EXTERNAL_TTS_API_MODEL`、`EXTERNAL_TTS_API_KEY`
+- 兼容读取当前运行环境里的 `API_BASE_URL`、`API_MODEL`、`API_KEY` 作为迁移别名
 - 前端接口保持不变，编辑器链路改动最小
 
 缺点：
@@ -121,7 +122,7 @@
 
 ### 真实验证
 
-- 使用环境中的真实 `API_BASE_URL`、`API_MODEL`、`API_KEY`
+- 使用环境中的真实 TTS 配置验证，优先为 `EXTERNAL_TTS_API_*`，没有时回退到 `API_*`
 - 直接运行一次服务端适配逻辑，验证能拿到非空 MP3 数据
 
 ## 风险与缓解

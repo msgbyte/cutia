@@ -6,12 +6,47 @@ import {
 } from "./openai-compatible";
 
 describe("getExternalTtsConfig", () => {
-	test("reads required config from environment", () => {
+	test("reads namespaced TTS config from environment", () => {
+		const config = getExternalTtsConfig({
+			env: {
+				EXTERNAL_TTS_API_BASE_URL: "https://example.com/v1/",
+				EXTERNAL_TTS_API_MODEL: "tts-1",
+				EXTERNAL_TTS_API_KEY: "secret",
+			},
+		});
+
+		expect(config).toEqual({
+			apiBaseUrl: "https://example.com/v1",
+			apiKey: "secret",
+			model: "tts-1",
+		});
+	});
+
+	test("falls back to legacy API_* aliases when namespaced TTS config is absent", () => {
 		const config = getExternalTtsConfig({
 			env: {
 				API_BASE_URL: "https://example.com/v1/",
 				API_MODEL: "tts-1",
 				API_KEY: "secret",
+			},
+		});
+
+		expect(config).toEqual({
+			apiBaseUrl: "https://example.com/v1",
+			apiKey: "secret",
+			model: "tts-1",
+		});
+	});
+
+	test("prefers namespaced TTS config over legacy aliases", () => {
+		const config = getExternalTtsConfig({
+			env: {
+				API_BASE_URL: "https://legacy.example.com/v1/",
+				API_MODEL: "legacy-tts",
+				API_KEY: "legacy-secret",
+				EXTERNAL_TTS_API_BASE_URL: "https://example.com/v1/",
+				EXTERNAL_TTS_API_MODEL: "tts-1",
+				EXTERNAL_TTS_API_KEY: "secret",
 			},
 		});
 
