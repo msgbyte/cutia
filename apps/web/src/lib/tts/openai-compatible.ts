@@ -286,7 +286,6 @@ function getResponsesWebSocketCloseRetryable({
 	const normalizedReason = reason.trim().toLowerCase();
 
 	if (
-		normalizedReason.includes("no available account") ||
 		normalizedReason.includes("required") ||
 		normalizedReason.includes("unsupported")
 	) {

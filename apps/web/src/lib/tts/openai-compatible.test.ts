@@ -563,7 +563,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		);
 	});
 
-	test("surfaces websocket close reasons as structured upstream errors", async () => {
+	test("marks websocket account exhaustion as retryable so legacy fallback can recover", async () => {
 		const sockets: FakeWebSocket[] = [];
 		const synthesis = synthesizeSpeechWithOpenAiCompatible({
 			config: {
@@ -591,7 +591,7 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 		await expect(synthesis).rejects.toMatchObject({
 			code: "EXTERNAL_TTS_UPSTREAM",
 			message: "External TTS websocket request failed: no available account",
-			retryable: false,
+			retryable: true,
 		});
 	});
 });

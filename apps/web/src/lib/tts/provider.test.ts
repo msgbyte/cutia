@@ -113,7 +113,36 @@ describe("synthesizeSpeechWithFallback", () => {
 		expect(legacyCalled).toBe(false);
 	});
 
-	test("does not fall back when the external provider returns a non-audio success response", async () => {
+	test("falls back when the external provider reports no available account", async () => {
+		let legacyCalled = false;
+
+		const result = await synthesizeSpeechWithFallback({
+			env: {
+				API_BASE_URL: "https://example.com/v1",
+				API_MODEL: "tts-1",
+				API_KEY: "secret",
+			},
+			text: "hello",
+			voice: "default",
+			openAiSynthesize: async () => {
+				throw new TtsError({
+					code: "EXTERNAL_TTS_UPSTREAM",
+					message:
+						"External TTS websocket request failed: no available account",
+					retryable: true,
+				});
+			},
+			legacySynthesize: async () => {
+				legacyCalled = true;
+				return Uint8Array.from([7, 8, 9]).buffer;
+			},
+		});
+
+		expect(Array.from(new Uint8Array(result))).toEqual([7, 8, 9]);
+		expect(legacyCalled).toBe(true);
+	});
+
+	test("does not fall back when the external provider returns a non-retryable websocket account error", async () => {
 		let legacyCalled = false;
 
 		await expect(
