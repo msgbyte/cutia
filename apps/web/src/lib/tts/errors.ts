@@ -8,17 +8,25 @@ export type TtsErrorCode = (typeof TTS_ERROR_CODES)[number];
 
 export class TtsError extends Error {
 	code: TtsErrorCode;
+	retryable?: boolean;
+	status?: number;
 
 	constructor({
 		code,
 		message,
+		retryable,
+		status,
 	}: {
 		code: TtsErrorCode;
 		message: string;
+		retryable?: boolean;
+		status?: number;
 	}) {
 		super(message);
 		this.name = "TtsError";
 		this.code = code;
+		this.retryable = retryable;
+		this.status = status;
 	}
 }
 

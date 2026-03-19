@@ -44,6 +44,18 @@ describe("getExternalTtsConfig", () => {
 			}),
 		).toThrow("External TTS is not configured");
 	});
+
+	test("rejects malformed API_BASE_URL values", () => {
+		expect(() =>
+			getExternalTtsConfig({
+				env: {
+					API_BASE_URL: "not-a-url",
+					API_MODEL: "tts-1",
+					API_KEY: "secret",
+				},
+			}),
+		).toThrow("External TTS is not configured");
+	});
 });
 
 describe("synthesizeSpeechWithOpenAiCompatible", () => {
@@ -265,6 +277,30 @@ describe("synthesizeSpeechWithOpenAiCompatible", () => {
 					}),
 			}),
 		).rejects.toThrow("gateway timeout");
+	});
+
+	test("marks auth failures as non-retryable upstream errors", async () => {
+		await expect(
+			synthesizeSpeechWithOpenAiCompatible({
+				config: {
+					apiBaseUrl: "https://example.com/v1",
+					apiKey: "secret",
+					model: "tts-1",
+				},
+				text: "hello",
+				voice: "default",
+				fetchImpl: async () =>
+					Response.json(
+						{ error: { message: "invalid api key" } },
+						{ status: 401, statusText: "Unauthorized" },
+					),
+			}),
+		).rejects.toMatchObject({
+			code: "EXTERNAL_TTS_UPSTREAM",
+			message: "External TTS request failed: invalid api key",
+			retryable: false,
+			status: 401,
+		});
 	});
 
 	test("falls back to the raw upstream body when JSON shape is unrecognized", async () => {

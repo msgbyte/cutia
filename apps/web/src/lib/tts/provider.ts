@@ -32,7 +32,11 @@ export async function synthesizeSpeechWithFallback({
 			throw error;
 		}
 
-		if (!isTtsError(error) || error.code !== "EXTERNAL_TTS_UPSTREAM") {
+		if (
+			!isTtsError(error) ||
+			error.code !== "EXTERNAL_TTS_UPSTREAM" ||
+			error.retryable === false
+		) {
 			throw error;
 		}
 

@@ -21,6 +21,14 @@ export interface ExternalTtsConfig {
 	model: string;
 }
 
+function isRetryableStatus(status: number | undefined): boolean {
+	if (status == null) {
+		return true;
+	}
+
+	return status === 408 || status === 429 || status >= 500;
+}
+
 function wrapExternalUpstreamError({ error }: { error: unknown }): TtsError {
 	if (error instanceof TtsError) {
 		return error;
@@ -30,6 +38,7 @@ function wrapExternalUpstreamError({ error }: { error: unknown }): TtsError {
 		code: "EXTERNAL_TTS_UPSTREAM",
 		message:
 			error instanceof Error ? error.message : "External TTS request failed",
+		retryable: true,
 	});
 }
 
@@ -52,6 +61,15 @@ export function getExternalTtsConfig({
 	const model = parsed.data.API_MODEL.trim();
 
 	if (!apiBaseUrl || !apiKey || !model) {
+		throw new TtsError({
+			code: "EXTERNAL_TTS_CONFIG",
+			message: "External TTS is not configured",
+		});
+	}
+
+	try {
+		new URL(apiBaseUrl);
+	} catch {
 		throw new TtsError({
 			code: "EXTERNAL_TTS_CONFIG",
 			message: "External TTS is not configured",
@@ -191,6 +209,8 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 				throw new TtsError({
 					code: "EXTERNAL_TTS_UPSTREAM",
 					message: `Expected audio response, received ${contentType || "(no content-type)"}`,
+					retryable: false,
+					status: response.status,
 				});
 			}
 
@@ -200,6 +220,8 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 				throw new TtsError({
 					code: "EXTERNAL_TTS_UPSTREAM",
 					message: "External TTS returned empty audio",
+					retryable: false,
+					status: response.status,
 				});
 			}
 
@@ -218,5 +240,7 @@ export async function synthesizeSpeechWithOpenAiCompatible({
 		message: `External TTS request failed: ${await getUpstreamErrorMessage({
 			response: lastErrorResponse ?? new Response(null, { status: 500 }),
 		})}`,
+		retryable: isRetryableStatus(lastErrorResponse?.status),
+		status: lastErrorResponse?.status,
 	});
 }

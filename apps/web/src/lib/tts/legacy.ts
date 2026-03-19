@@ -12,6 +12,10 @@ const legacyResponseSchema = z.object({
 	url: z.string().url(),
 });
 
+function isRedirectStatus(status: number): boolean {
+	return status >= 300 && status < 400;
+}
+
 function wrapLegacyUpstreamError({ error }: { error: unknown }): TtsError {
 	if (error instanceof TtsError) {
 		return error;
@@ -97,12 +101,45 @@ export async function synthesizeSpeechWithLegacyProvider({
 	try {
 		audioResponse = await fetchWithTimeout({
 			fetchImpl,
+			init: { redirect: "manual" },
 			input: audioUrl,
 			timeoutMessage: "Legacy TTS audio download timed out",
 			timeoutMs,
 		});
 	} catch (error) {
 		throw wrapLegacyUpstreamError({ error });
+	}
+
+	if (isRedirectStatus(audioResponse.status)) {
+		const location = audioResponse.headers.get("location");
+
+		if (!location) {
+			throw new TtsError({
+				code: "LEGACY_TTS_UPSTREAM",
+				message: `Legacy TTS audio download failed: ${audioResponse.status}`,
+			});
+		}
+
+		let redirectUrl: URL;
+
+		try {
+			redirectUrl = new URL(location, audioUrl);
+		} catch {
+			throw new TtsError({
+				code: "LEGACY_TTS_UPSTREAM",
+				message: "Legacy TTS audio download redirected to an invalid URL",
+			});
+		}
+
+		if (
+			redirectUrl.protocol !== "https:" ||
+			!LEGACY_TTS_ALLOWED_AUDIO_HOSTS.has(redirectUrl.hostname)
+		) {
+			throw new TtsError({
+				code: "LEGACY_TTS_UPSTREAM",
+				message: "Legacy TTS audio download redirected to an unexpected host",
+			});
+		}
 	}
 
 	if (!audioResponse.ok) {

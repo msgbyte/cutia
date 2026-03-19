@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { TtsError } from "@/lib/tts/errors";
+import { NextRequest } from "next/server";
 
 let synthesizeImpl: typeof import("@/lib/tts/provider").synthesizeSpeechWithFallback;
 const originalConsoleError = console.error;
@@ -19,8 +20,8 @@ mock.module("@/lib/tts/provider", () => ({
 
 const { POST } = await import("./route");
 
-function createRequest(body: unknown): Request {
-	return new Request("http://localhost/api/tts/generate", {
+function createRequest(body: unknown): NextRequest {
+	return new NextRequest("http://localhost/api/tts/generate", {
 		body: JSON.stringify(body),
 		headers: {
 			"content-type": "application/json",
@@ -40,7 +41,7 @@ describe("POST /api/tts/generate", () => {
 	});
 
 	test("returns base64 audio for successful synthesis", async () => {
-		const response = await POST(createRequest({ text: "hello" }) as never);
+		const response = await POST(createRequest({ text: "hello" }));
 
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({
@@ -56,7 +57,7 @@ describe("POST /api/tts/generate", () => {
 			});
 		};
 
-		const response = await POST(createRequest({ text: "hello" }) as never);
+		const response = await POST(createRequest({ text: "hello" }));
 
 		expect(response.status).toBe(502);
 		expect(await response.json()).toEqual({
@@ -72,7 +73,7 @@ describe("POST /api/tts/generate", () => {
 			});
 		};
 
-		const response = await POST(createRequest({ text: "hello" }) as never);
+		const response = await POST(createRequest({ text: "hello" }));
 
 		expect(response.status).toBe(502);
 		expect(await response.json()).toEqual({
@@ -88,7 +89,7 @@ describe("POST /api/tts/generate", () => {
 			});
 		};
 
-		const response = await POST(createRequest({ text: "hello" }) as never);
+		const response = await POST(createRequest({ text: "hello" }));
 
 		expect(response.status).toBe(500);
 		expect(await response.json()).toEqual({

@@ -83,6 +83,38 @@ describe("synthesizeSpeechWithLegacyProvider", () => {
 		expect(Array.from(new Uint8Array(audio))).toEqual([1, 2, 3]);
 	});
 
+	test("rejects redirected audio downloads that leave the allowlist", async () => {
+		let sawManualRedirect = false;
+
+		await expect(
+			synthesizeSpeechWithLegacyProvider({
+				text: "hello",
+				fetchImpl: async (input, init) => {
+					if (String(input).includes("/apis/mbAIsc?")) {
+						return Response.json({
+							code: 200,
+							url: "https://api.milorapart.top/voice/test.mp3",
+						});
+					}
+
+					sawManualRedirect = init?.redirect === "manual";
+
+					return new Response(null, {
+						status: 302,
+						headers: {
+							location: "https://evil.example.com/payload.mp3",
+						},
+					});
+				},
+			}),
+		).rejects.toMatchObject({
+			code: "LEGACY_TTS_UPSTREAM",
+			message: "Legacy TTS audio download redirected to an unexpected host",
+		});
+
+		expect(sawManualRedirect).toBe(true);
+	});
+
 	test("rejects synthesis text that would exceed the legacy GET limit", async () => {
 		let fetchCalled = false;
 

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { TtsError } from "./errors";
+import { synthesizeSpeechWithOpenAiCompatible } from "./openai-compatible";
 import { synthesizeSpeechWithFallback } from "./provider";
 
 describe("synthesizeSpeechWithFallback", () => {
@@ -75,6 +76,81 @@ describe("synthesizeSpeechWithFallback", () => {
 				},
 			}),
 		).rejects.toThrow("unexpected provider failure");
+
+		expect(legacyCalled).toBe(false);
+	});
+
+	test("rethrows non-retryable external upstream errors instead of falling back", async () => {
+		let legacyCalled = false;
+
+		await expect(
+			synthesizeSpeechWithFallback({
+				env: {
+					API_BASE_URL: "https://example.com/v1",
+					API_MODEL: "tts-1",
+					API_KEY: "secret",
+				},
+				text: "hello",
+				voice: "default",
+				openAiSynthesize: async () => {
+					throw Object.assign(
+						new TtsError({
+							code: "EXTERNAL_TTS_UPSTREAM",
+							message: "External TTS request failed: invalid api key",
+						}),
+						{
+							retryable: false,
+							status: 401,
+						},
+					);
+				},
+				legacySynthesize: async () => {
+					legacyCalled = true;
+					return Uint8Array.from([7, 8, 9]).buffer;
+				},
+			}),
+		).rejects.toMatchObject({
+			code: "EXTERNAL_TTS_UPSTREAM",
+			retryable: false,
+			status: 401,
+		});
+
+		expect(legacyCalled).toBe(false);
+	});
+
+	test("does not fall back when the external provider returns a non-audio success response", async () => {
+		let legacyCalled = false;
+
+		await expect(
+			synthesizeSpeechWithFallback({
+				env: {
+					API_BASE_URL: "https://example.com/v1",
+					API_MODEL: "tts-1",
+					API_KEY: "secret",
+				},
+				text: "hello",
+				voice: "default",
+				openAiSynthesize: ({ config, text, voice }) =>
+					synthesizeSpeechWithOpenAiCompatible({
+						config,
+						text,
+						voice,
+						fetchImpl: async () =>
+							new Response("<!doctype html>", {
+								status: 200,
+								headers: { "Content-Type": "text/html; charset=utf-8" },
+							}),
+					}),
+				legacySynthesize: async () => {
+					legacyCalled = true;
+					return Uint8Array.from([7, 8, 9]).buffer;
+				},
+			}),
+		).rejects.toMatchObject({
+			code: "EXTERNAL_TTS_UPSTREAM",
+			message: "Expected audio response, received text/html; charset=utf-8",
+			retryable: false,
+		});
 
 		expect(legacyCalled).toBe(false);
 	});
