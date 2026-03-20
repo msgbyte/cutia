@@ -89,6 +89,17 @@ Use a provider-supported TTS model for `EXTERNAL_TTS_API_MODEL` (for example
 supports). The shared `API_MODEL` alias is only a migration fallback and may
 already point at a non-TTS chat model in your environment.
 
+Before treating a failed probe as a code regression, confirm the provider
+itself is TTS-capable for the current credentials:
+
+- `/models` should list the configured TTS model or another audio-capable model
+- either `/audio/speech` must return audio directly, or `/responses` must accept
+  audio output requests for the configured model
+- if `/audio/speech` returns `404` and `/models` contains only chat/text models,
+  the provider is not exposing a usable TTS surface for this environment
+- legacy fallback is best-effort only; if the legacy upstream is unavailable,
+  route probes will still return `502`
+
 To verify that the configured provider can actually return audio, run:
 
 ```bash
