@@ -76,13 +76,18 @@ Optional TTS env values:
 
 ```bash
 EXTERNAL_TTS_API_BASE_URL="https://your-tts-provider.example.com/v1"
-EXTERNAL_TTS_API_MODEL="your_tts_model"
+EXTERNAL_TTS_API_MODEL="gpt-4o-mini-tts"
 EXTERNAL_TTS_API_KEY="your_tts_api_key"
 ```
 
 Cutia prefers `EXTERNAL_TTS_API_*` for external speech synthesis. The legacy
 `API_BASE_URL` / `API_MODEL` / `API_KEY` names are still accepted as
 compatibility aliases when the namespaced variables are absent.
+
+Use a provider-supported TTS model for `EXTERNAL_TTS_API_MODEL` (for example
+`gpt-4o-mini-tts` or another audio-output model that your provider actually
+supports). The shared `API_MODEL` alias is only a migration fallback and may
+already point at a non-TTS chat model in your environment.
 
 To verify that the configured provider can actually return audio, run:
 
