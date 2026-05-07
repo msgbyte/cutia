@@ -131,6 +131,11 @@ export const ACTIONS = {
 		description: "Convert text to speech",
 		category: "editing",
 	},
+	"generate-template-cut": {
+		description: "Generate a template-based video draft",
+		category: "editing",
+		args: { templateId: "string" },
+	},
 	"toggle-bookmark": {
 		description: "Toggle bookmark at playhead",
 		category: "timeline",

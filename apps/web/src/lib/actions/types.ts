@@ -8,6 +8,7 @@ export type TActionArgsMap = {
 	"seek-backward": { seconds: number } | undefined;
 	"jump-forward": { seconds: number } | undefined;
 	"jump-backward": { seconds: number } | undefined;
+	"generate-template-cut": { templateId: "clean-cut" | "story-pulse" | "memory-album" };
 };
 
 type TKeysWithValueUndefined<T> = {
