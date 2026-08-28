@@ -174,11 +174,15 @@ export function buildVideoElement({
 	name,
 	duration,
 	startTime,
+	trimStart = 0,
+	trimEnd = 0,
 }: {
 	mediaId: string;
 	name: string;
 	duration: number;
 	startTime: number;
+	trimStart?: number;
+	trimEnd?: number;
 }): CreateVideoElement {
 	return {
 		type: "video",
@@ -186,8 +190,8 @@ export function buildVideoElement({
 		name,
 		duration,
 		startTime,
-		trimStart: 0,
-		trimEnd: 0,
+		trimStart,
+		trimEnd,
 		muted: false,
 		hidden: false,
 		transform: { scale: 1, position: { x: 0, y: 0 }, rotate: 0 },

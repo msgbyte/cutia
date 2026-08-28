@@ -7,6 +7,9 @@ import {
 } from "@/lib/timeline/element-utils";
 import type { AgentTool } from "./types";
 
+const isFiniteNumber = (value: unknown): value is number =>
+	typeof value === "number" && Number.isFinite(value);
+
 export const getTimelineStateTool: AgentTool = {
 	name: "get_timeline_state",
 	description:
@@ -34,6 +37,13 @@ export const getTimelineStateTool: AgentTool = {
 				duration: element.duration,
 				trimStart: element.trimStart,
 				trimEnd: element.trimEnd,
+				...(element.type === "video"
+					? {
+							sourceOutPoint:
+								element.trimStart +
+								element.duration * (element.playbackRate ?? 1),
+						}
+					: {}),
 				...("content" in element ? { content: element.content } : {}),
 				...("mediaId" in element ? { mediaId: element.mediaId } : {}),
 			})),
@@ -65,7 +75,17 @@ export const addVideoToTimelineTool: AgentTool = {
 			duration: {
 				type: "number",
 				description:
-					"Duration in seconds. For videos, defaults to the media's original duration. For images, defaults to 5 seconds.",
+					"Duration in seconds. For trimmed videos, defaults to the selected source range. For other videos, defaults to the original duration. For images, defaults to 5 seconds.",
+			},
+			trimStart: {
+				type: "number",
+				description:
+					"Source video in-point in seconds. Only supported for videos.",
+			},
+			sourceOutPoint: {
+				type: "number",
+				description:
+					"Source video out-point in seconds. Only supported for videos. When omitted, duration determines the out-point.",
 			},
 		},
 		required: ["mediaId"],
@@ -90,10 +110,77 @@ export const addVideoToTimelineTool: AgentTool = {
 			};
 		}
 
-		const duration = (args.duration as number) ?? asset.duration ?? 5;
+		const hasSourceRange =
+			args.trimStart !== undefined || args.sourceOutPoint !== undefined;
+		if (!isVideo && hasSourceRange) {
+			return {
+				success: false,
+				message: "trimStart and sourceOutPoint are only supported for videos",
+			};
+		}
+
+		let duration = (args.duration as number) ?? asset.duration ?? 5;
+		let trimStart = 0;
+		let trimEnd = 0;
+
+		if (isVideo && (hasSourceRange || args.duration !== undefined)) {
+			const sourceDuration = asset.duration;
+			const requestedTrimStart = args.trimStart ?? 0;
+			const requestedSourceOutPoint = args.sourceOutPoint;
+			if (
+				!isFiniteNumber(sourceDuration) ||
+				sourceDuration <= 0 ||
+				!isFiniteNumber(requestedTrimStart) ||
+				requestedTrimStart < 0 ||
+				(args.duration !== undefined &&
+					(!isFiniteNumber(args.duration) || args.duration <= 0)) ||
+				(requestedSourceOutPoint !== undefined &&
+					!isFiniteNumber(requestedSourceOutPoint))
+			) {
+				return {
+					success: false,
+					message: `Video '${asset.name}' has an invalid source range`,
+				};
+			}
+
+			trimStart = requestedTrimStart;
+			const sourceOutPoint =
+				requestedSourceOutPoint ??
+				(args.duration !== undefined
+					? trimStart + args.duration
+					: sourceDuration);
+			if (sourceOutPoint <= trimStart || sourceOutPoint > sourceDuration) {
+				return {
+					success: false,
+					message: `Source range must be within 0-${sourceDuration}s and end after trimStart`,
+				};
+			}
+
+			const sourceClipDuration = sourceOutPoint - trimStart;
+			if (
+				args.duration !== undefined &&
+				requestedSourceOutPoint !== undefined &&
+				Math.abs(args.duration - sourceClipDuration) > 0.000001
+			) {
+				return {
+					success: false,
+					message: "duration must equal sourceOutPoint - trimStart",
+				};
+			}
+
+			duration = sourceClipDuration;
+			trimEnd = sourceDuration - sourceOutPoint;
+		}
 
 		const element = isVideo
-			? buildVideoElement({ mediaId, name: asset.name, duration, startTime })
+			? buildVideoElement({
+					mediaId,
+					name: asset.name,
+					duration,
+					startTime,
+					trimStart,
+					trimEnd,
+				})
 			: buildImageElement({ mediaId, name: asset.name, duration, startTime });
 
 		editor.timeline.insertElement({
