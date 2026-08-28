@@ -13,10 +13,12 @@ const videoTrack = ({
 	id,
 	elements = [],
 	isMain = false,
+	hidden = false,
 }: {
 	id: string;
 	elements?: VideoTrack["elements"];
 	isMain?: boolean;
+	hidden?: boolean;
 }): VideoTrack => ({
 	id,
 	name: id,
@@ -24,7 +26,7 @@ const videoTrack = ({
 	elements,
 	isMain,
 	muted: false,
-	hidden: false,
+	hidden,
 });
 
 const imageAsset = (id: string): MediaAsset => ({
@@ -55,6 +57,19 @@ describe("freeze frame timeline decisions", () => {
 				}),
 			).toBe(expected);
 		}
+	});
+
+	test("keeps the reversed first frame inside the source range", () => {
+		expect(
+			getVisualSourceTime({
+				timelineTime: 5,
+				startTime: 5,
+				duration: 8,
+				trimStart: 3,
+				playbackRate: 2,
+				reversed: true,
+			}),
+		).toBe(19 - 1e-6);
 	});
 
 	test("undo removes only the generated asset", async () => {
@@ -138,6 +153,21 @@ describe("freeze frame timeline decisions", () => {
 				endTime: 7,
 			}),
 		).toBe("nearest-free");
+	});
+
+	test("skips hidden video tracks above the source", () => {
+		expect(
+			findAvailableVideoTrackAbove({
+				tracks: [
+					videoTrack({ id: "visible" }),
+					videoTrack({ id: "hidden", hidden: true }),
+					videoTrack({ id: "source" }),
+				],
+				sourceTrackId: "source",
+				startTime: 4,
+				endTime: 7,
+			}),
+		).toBe("visible");
 	});
 
 	test("requires a new track when every video track above overlaps", () => {

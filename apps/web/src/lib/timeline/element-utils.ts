@@ -132,6 +132,7 @@ export function findAvailableVideoTrackAbove({
 		if (
 			track.type === "video" &&
 			!track.isMain &&
+			!track.hidden &&
 			!wouldElementOverlap({ elements: track.elements, startTime, endTime })
 		) {
 			return track.id;
@@ -157,9 +158,10 @@ export function getVisualSourceTime({
 	reversed?: boolean;
 }): number {
 	const elapsed = timelineTime - startTime;
-	return reversed
-		? trimStart + playbackRate * (duration - elapsed)
-		: trimStart + elapsed * playbackRate;
+	if (!reversed) return trimStart + elapsed * playbackRate;
+
+	const sourceTime = trimStart + playbackRate * (duration - elapsed);
+	return elapsed === 0 ? Math.max(trimStart, sourceTime - 1e-6) : sourceTime;
 }
 
 export function buildTextElement({
