@@ -1,5 +1,6 @@
 import type { CanvasRenderer } from "../canvas-renderer";
 import { BaseNode } from "./base-node";
+import { getVisualSourceTime } from "@/lib/timeline/element-utils";
 import type { Transform } from "@/types/timeline";
 
 const VISUAL_EPSILON = 1 / 1000;
@@ -19,12 +20,14 @@ export abstract class VisualNode<
 	Params extends VisualNodeParams = VisualNodeParams,
 > extends BaseNode<Params> {
 	protected getLocalTime(time: number): number {
-		const rate = this.params.playbackRate ?? 1;
-		const elapsed = time - this.params.timeOffset;
-		if (this.params.reversed) {
-			return this.params.trimStart + rate * (this.params.duration - elapsed);
-		}
-		return this.params.trimStart + elapsed * rate;
+		return getVisualSourceTime({
+			timelineTime: time,
+			startTime: this.params.timeOffset,
+			duration: this.params.duration,
+			trimStart: this.params.trimStart,
+			playbackRate: this.params.playbackRate,
+			reversed: this.params.reversed,
+		});
 	}
 
 	protected isInRange(time: number): boolean {

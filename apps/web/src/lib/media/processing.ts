@@ -106,6 +106,57 @@ export async function generateThumbnail({
 	}
 }
 
+export async function extractVideoFrame({
+	videoFile,
+	timeInSeconds,
+	fileName,
+}: {
+	videoFile: File;
+	timeInSeconds: number;
+	fileName: string;
+}): Promise<{ file: File; width: number; height: number }> {
+	const input = new Input({
+		source: new BlobSource(videoFile),
+		formats: ALL_FORMATS,
+	});
+	const videoTrack = await input.getPrimaryVideoTrack();
+
+	if (!videoTrack) throw new Error("No video track found in the file");
+	if (!(await videoTrack.canDecode())) {
+		throw new Error("Video codec not supported for decoding");
+	}
+
+	const frame = await new VideoSampleSink(videoTrack).getSample(timeInSeconds);
+	if (!frame) throw new Error("Could not get frame at specified time");
+
+	try {
+		const width = videoTrack.displayWidth;
+		const height = videoTrack.displayHeight;
+		const canvas = document.createElement("canvas");
+		canvas.width = width;
+		canvas.height = height;
+		const context = canvas.getContext("2d");
+		if (!context) throw new Error("Could not get canvas context");
+
+		frame.draw(context, 0, 0, width, height);
+		const blob = await new Promise<Blob>((resolve, reject) => {
+			canvas.toBlob(
+				(value) =>
+					value ? resolve(value) : reject(new Error("Could not encode PNG")),
+				"image/png",
+			);
+		});
+
+		return {
+			file: new File([blob], fileName, { type: "image/png" }),
+			width,
+			height,
+		};
+	} finally {
+		frame.close();
+	}
+}
+
 export async function generateImageThumbnail({
 	imageFile,
 }: {

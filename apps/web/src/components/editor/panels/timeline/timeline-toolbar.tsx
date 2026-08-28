@@ -33,6 +33,7 @@ import {
 	AlignRightIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useElementSelection } from "@/hooks/timeline/element/use-element-selection";
 
 export function TimelineToolbar({
 	zoomLevel,
@@ -73,8 +74,17 @@ export function TimelineToolbar({
 function ToolbarLeftSection() {
 	const { t } = useTranslation();
 	const editor = useEditor();
+	const { selectedElements } = useElementSelection();
 	const currentTime = editor.playback.getCurrentTime();
 	const currentBookmarked = editor.scenes.isBookmarked({ time: currentTime });
+	const [selected] =
+		selectedElements.length === 1
+			? editor.timeline.getElementsWithTracks({ elements: selectedElements })
+			: [];
+	const canFreezeFrame =
+		selected?.element.type === "video" &&
+		currentTime >= selected.element.startTime &&
+		currentTime < selected.element.startTime + selected.element.duration;
 
 	const handleAction = ({
 		action,
@@ -127,9 +137,11 @@ function ToolbarLeftSection() {
 
 				<ToolbarButton
 					icon={<HugeiconsIcon icon={SnowIcon} />}
-					tooltip={t('Coming soon')}
-					disabled={true}
-					onClick={({ event: _event }) => {}}
+					tooltip={t("Freeze frame")}
+					disabled={!canFreezeFrame}
+					onClick={({ event }) =>
+						handleAction({ action: "freeze-frame", event })
+					}
 				/>
 
 				<ToolbarButton
@@ -248,6 +260,7 @@ function ToolbarButton({
 					variant={isActive ? "secondary" : "text"}
 					size="icon"
 					type="button"
+					disabled={disabled}
 					onClick={(event) => onClick({ event })}
 					className={cn(
 						"rounded-sm",

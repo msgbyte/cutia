@@ -8,6 +8,7 @@ export type TActionArgsMap = {
 	"seek-backward": { seconds: number } | undefined;
 	"jump-forward": { seconds: number } | undefined;
 	"jump-backward": { seconds: number } | undefined;
+	"freeze-frame": { trackId: string; elementId: string } | undefined;
 };
 
 type TKeysWithValueUndefined<T> = {

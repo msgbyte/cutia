@@ -114,6 +114,54 @@ export function wouldElementOverlap({
 	});
 }
 
+export function findAvailableVideoTrackAbove({
+	tracks,
+	sourceTrackId,
+	startTime,
+	endTime,
+}: {
+	tracks: TimelineTrack[];
+	sourceTrackId: string;
+	startTime: number;
+	endTime: number;
+}): string | null {
+	const sourceIndex = tracks.findIndex((track) => track.id === sourceTrackId);
+
+	for (let index = sourceIndex - 1; index >= 0; index--) {
+		const track = tracks[index];
+		if (
+			track.type === "video" &&
+			!track.isMain &&
+			!wouldElementOverlap({ elements: track.elements, startTime, endTime })
+		) {
+			return track.id;
+		}
+	}
+
+	return null;
+}
+
+export function getVisualSourceTime({
+	timelineTime,
+	startTime,
+	duration,
+	trimStart,
+	playbackRate = 1,
+	reversed = false,
+}: {
+	timelineTime: number;
+	startTime: number;
+	duration: number;
+	trimStart: number;
+	playbackRate?: number;
+	reversed?: boolean;
+}): number {
+	const elapsed = timelineTime - startTime;
+	return reversed
+		? trimStart + playbackRate * (duration - elapsed)
+		: trimStart + elapsed * playbackRate;
+}
+
 export function buildTextElement({
 	raw,
 	startTime,

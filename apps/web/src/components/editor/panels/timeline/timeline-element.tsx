@@ -51,6 +51,7 @@ import {
 	ArrowTurnBackwardIcon,
 	Edit02Icon,
 	AiVoiceGeneratorIcon,
+	SnowIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { uppercase } from "@/utils/string";
@@ -198,6 +199,20 @@ export function TimelineElement({
 				>
 					{t("Split")}
 				</ActionMenuItem>
+				{element.type === "video" && (
+					<ContextMenuItem
+						icon={<HugeiconsIcon icon={SnowIcon} />}
+						onClick={(event) => {
+							event.stopPropagation();
+							invokeAction("freeze-frame", {
+								trackId: track.id,
+								elementId: element.id,
+							});
+						}}
+					>
+						{t("Freeze frame")}
+					</ContextMenuItem>
+				)}
 				<CopyMenuItem />
 				{element.type === "video" && selectedElements.length === 1 && (
 					<ActionMenuItem

@@ -99,6 +99,11 @@ export const ACTIONS = {
 		description: "Export selected clip",
 		category: "editing",
 	},
+	"freeze-frame": {
+		description: "Freeze frame",
+		category: "editing",
+		args: { trackId: "string", elementId: "string" },
+	},
 	"paste-copied": {
 		description: "Paste elements at playhead",
 		category: "editing",

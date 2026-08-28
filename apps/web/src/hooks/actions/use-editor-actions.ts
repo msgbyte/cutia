@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useTimelineStore } from "@/stores/timeline-store";
 import { useMediaPreviewStore } from "@/stores/media-preview-store";
 import { useActionHandler } from "@/hooks/actions/use-action-handler";
@@ -11,12 +12,27 @@ import { toast } from "sonner";
 import { i18next } from "@/lib/i18n";
 import { DEFAULT_EXPORT_OPTIONS } from "@/constants/export-constants";
 import { getExportFileExtension, getExportMimeType } from "@/lib/export";
+import { extractVideoFrame } from "@/lib/media/processing";
+import {
+	buildImageElement,
+	findAvailableVideoTrackAbove,
+	getVisualSourceTime,
+} from "@/lib/timeline/element-utils";
+import {
+	AddMediaAssetCommand,
+	AddTrackCommand,
+	BatchCommand,
+	type Command,
+	InsertElementCommand,
+} from "@/lib/commands";
+import { storageService } from "@/services/storage/service";
 
 export function useEditorActions() {
 	const editor = useEditor();
 	const activeProject = editor.project.getActive();
 	const { selectedElements, setElementSelection } = useElementSelection();
 	const { clipboard, setClipboard, toggleSnapping } = useTimelineStore();
+	const freezeFrameInFlight = useRef(false);
 
 	useActionHandler(
 		"toggle-play",
@@ -333,6 +349,176 @@ export function useEditorActions() {
 				console.error("Failed to export selected clip:", error);
 				toast.error(i18next.t("Failed to export clip"), { id: toastId });
 			});
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"freeze-frame",
+		(args) => {
+			if (freezeFrameInFlight.current) return;
+
+			const sourceRef =
+				args ??
+				(selectedElements.length === 1 ? selectedElements[0] : undefined);
+			if (!sourceRef) {
+				toast.warning(i18next.t("Select one video to freeze"));
+				return;
+			}
+
+			const [source] = editor.timeline.getElementsWithTracks({
+				elements: [sourceRef],
+			});
+			if (
+				!source ||
+				source.element.type !== "video" ||
+				source.track.type !== "video"
+			) {
+				toast.warning(i18next.t("Select one video to freeze"));
+				return;
+			}
+			const sourceElement = source.element;
+			const sourceTrack = source.track;
+
+			const currentTime = editor.playback.getCurrentTime();
+			if (
+				currentTime < sourceElement.startTime ||
+				currentTime >= sourceElement.startTime + sourceElement.duration
+			) {
+				toast.warning(i18next.t("Move the playhead inside the video"));
+				return;
+			}
+
+			const sourceAsset = editor.media
+				.getAssets()
+				.find((asset) => asset.id === sourceElement.mediaId);
+			if (!sourceAsset) {
+				toast.error(i18next.t("Source video is unavailable"));
+				return;
+			}
+
+			freezeFrameInFlight.current = true;
+			const toastId = "freeze-frame";
+			toast.loading(i18next.t("Creating freeze frame"), { id: toastId });
+
+			(async () => {
+				let assetId: string | undefined;
+				let objectUrl: string | undefined;
+				let batchCommand: BatchCommand | undefined;
+				let commandStarted = false;
+				let committed = false;
+
+				try {
+					const sourceTime = getVisualSourceTime({
+						timelineTime: currentTime,
+						startTime: sourceElement.startTime,
+						duration: sourceElement.duration,
+						trimStart: sourceElement.trimStart,
+						playbackRate: sourceElement.playbackRate,
+						reversed: sourceElement.reversed,
+					});
+					const sourceName = sourceElement.name.replace(/\.[^/.]+$/, "");
+					const { file, width, height } = await extractVideoFrame({
+						videoFile: sourceAsset.file,
+						timeInSeconds: sourceTime,
+						fileName: `${sourceName}-freeze-${currentTime.toFixed(3)}.png`,
+					});
+
+					objectUrl = URL.createObjectURL(file);
+					const asset = {
+						name: file.name,
+						type: "image" as const,
+						file,
+						url: objectUrl,
+						width,
+						height,
+					};
+					const addMediaCommand = new AddMediaAssetCommand(
+						activeProject.metadata.id,
+						asset,
+						true,
+					);
+					assetId = addMediaCommand.getAssetId();
+					await storageService.saveMediaAsset({
+						projectId: activeProject.metadata.id,
+						mediaAsset: { ...asset, id: assetId },
+					});
+
+					const tracks = editor.timeline.getTracks();
+					const sourceTrackIndex = tracks.findIndex(
+						(track) => track.id === sourceTrack.id,
+					);
+					if (sourceTrackIndex < 0)
+						throw new Error("Source track is unavailable");
+
+					const duration = 3;
+					let targetTrackId = findAvailableVideoTrackAbove({
+						tracks,
+						sourceTrackId: sourceTrack.id,
+						startTime: currentTime,
+						endTime: currentTime + duration,
+					});
+					const commands: Command[] = [addMediaCommand];
+
+					if (!targetTrackId) {
+						const addTrackCommand = new AddTrackCommand(
+							"video",
+							sourceTrackIndex,
+						);
+						targetTrackId = addTrackCommand.getTrackId();
+						commands.push(addTrackCommand);
+					}
+
+					const imageElement = buildImageElement({
+						mediaId: assetId,
+						name: file.name,
+						duration,
+						startTime: currentTime,
+					});
+					imageElement.transform = {
+						...sourceElement.transform,
+						position: { ...sourceElement.transform.position },
+					};
+					imageElement.opacity = sourceElement.opacity;
+
+					const insertCommand = new InsertElementCommand({
+						element: imageElement,
+						placement: { mode: "explicit", trackId: targetTrackId },
+					});
+					commands.push(insertCommand);
+					batchCommand = new BatchCommand(commands);
+					commandStarted = true;
+					editor.command.execute({ command: batchCommand });
+					committed = true;
+
+					setElementSelection({
+						elements: [
+							{
+								trackId: targetTrackId,
+								elementId: insertCommand.getElementId(),
+							},
+						],
+					});
+					toast.success(i18next.t("Freeze frame created"), { id: toastId });
+				} catch (error) {
+					console.error("Failed to create freeze frame:", error);
+					if (commandStarted && !committed) batchCommand?.undo();
+					if (!committed && assetId) {
+						await storageService
+							.deleteMediaAsset({
+								projectId: activeProject.metadata.id,
+								id: assetId,
+							})
+							.catch(() => undefined);
+					}
+					if (!committed && objectUrl) URL.revokeObjectURL(objectUrl);
+					toast.error(i18next.t("Failed to create freeze frame"), {
+						id: toastId,
+					});
+				} finally {
+					freezeFrameInFlight.current = false;
+				}
+			})();
 		},
 		undefined,
 	);
