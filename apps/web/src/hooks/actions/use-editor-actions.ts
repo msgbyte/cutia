@@ -11,7 +11,7 @@ import { generateAndInsertSpeech } from "@/lib/tts/service";
 import { toast } from "sonner";
 import { i18next } from "@/lib/i18n";
 import { DEFAULT_EXPORT_OPTIONS } from "@/constants/export-constants";
-import { getExportFileExtension, getExportMimeType } from "@/lib/export";
+import { getExportMimeType, getSelectedClipExportFilename } from "@/lib/export";
 import { extractVideoFrame } from "@/lib/media/processing";
 import {
 	buildImageElement,
@@ -338,7 +338,12 @@ export function useEditorActions() {
 				const url = URL.createObjectURL(blob);
 				const link = document.createElement("a");
 				link.href = url;
-				link.download = `${element.name}-clip${getExportFileExtension({ format: DEFAULT_EXPORT_OPTIONS.format })}`;
+				link.download = getSelectedClipExportFilename({
+					startTime: element.startTime,
+					duration: element.duration,
+					fps: activeProject.settings.fps,
+					format: DEFAULT_EXPORT_OPTIONS.format,
+				});
 				document.body.appendChild(link);
 				link.click();
 				link.remove();

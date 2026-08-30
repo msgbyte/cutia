@@ -1,6 +1,7 @@
 import { EXPORT_MIME_TYPES } from "@/constants/export-constants";
 import type { ExportFormat } from "@/types/export";
 import type { TimelineTrack } from "@/types/timeline";
+import { formatTimeCode } from "@/lib/time";
 
 export function getSelectedVideoClip({
 	tracks,
@@ -41,4 +42,25 @@ export function getExportFileExtension({
 	format: ExportFormat;
 }): string {
 	return `.${format}`;
+}
+
+export function getSelectedClipExportFilename({
+	startTime,
+	duration,
+	fps,
+	format,
+}: {
+	startTime: number;
+	duration: number;
+	fps: number;
+	format: ExportFormat;
+}): string {
+	const filenameTime = (timeInSeconds: number) =>
+		formatTimeCode({
+			timeInSeconds,
+			format: "HH:MM:SS:FF",
+			fps,
+		}).replaceAll(":", "-");
+
+	return `${filenameTime(startTime)}_to_${filenameTime(startTime + duration)}${getExportFileExtension({ format })}`;
 }

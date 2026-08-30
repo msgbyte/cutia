@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getSelectedVideoClip } from "../export";
+import { getSelectedClipExportFilename, getSelectedVideoClip } from "../export";
 import { createTimelineAudioBuffer } from "../media/audio";
 import type { MediaAsset } from "@/types/assets";
 import type { TimelineTrack, VideoTrack } from "@/types/timeline";
@@ -82,6 +82,17 @@ describe("getSelectedVideoClip", () => {
 			],
 		});
 	});
+});
+
+test("names a selected clip with its timeline start and end time", () => {
+	expect(
+		getSelectedClipExportFilename({
+			startTime: 7.5,
+			duration: 3.25,
+			fps: 24,
+			format: "mp4",
+		}),
+	).toBe("00-00-07-12_to_00-00-10-18.mp4");
 });
 
 test("export audio follows video speed and direction", async () => {
