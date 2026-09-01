@@ -72,6 +72,46 @@ UPSTASH_REDIS_REST_TOKEN="cutia_redis_token"
 NODE_ENV="development"
 ```
 
+Optional TTS env values:
+
+```bash
+EXTERNAL_TTS_API_BASE_URL="https://your-tts-provider.example.com/v1"
+EXTERNAL_TTS_API_MODEL="gpt-4o-mini-tts"
+EXTERNAL_TTS_API_KEY="your_tts_api_key"
+```
+
+Cutia prefers `EXTERNAL_TTS_API_*` for external speech synthesis. The legacy
+`API_BASE_URL` / `API_MODEL` / `API_KEY` names are still accepted as
+compatibility aliases when the namespaced variables are absent.
+
+Use a provider-supported TTS model for `EXTERNAL_TTS_API_MODEL` (for example
+`gpt-4o-mini-tts` or another audio-output model that your provider actually
+supports). The shared `API_MODEL` alias is only a migration fallback and may
+already point at a non-TTS chat model in your environment.
+
+Before treating a failed probe as a code regression, confirm the provider
+itself is TTS-capable for the current credentials:
+
+- `/models` should list the configured TTS model or another audio-capable model
+- either `/audio/speech` must return audio directly, or `/responses` must accept
+  audio output requests for the configured model
+- if `/audio/speech` returns `404` and `/models` contains only chat/text models,
+  the provider is not exposing a usable TTS surface for this environment
+- legacy fallback is best-effort only; if the legacy upstream is unavailable,
+  route probes will still return `502`
+
+To verify that the configured provider can actually return audio, run:
+
+```bash
+bun --eval 'import { getExternalTtsConfig, synthesizeSpeechWithOpenAiCompatible } from "./src/lib/tts/openai-compatible.ts"; const config = getExternalTtsConfig({ env: process.env }); const audio = await synthesizeSpeechWithOpenAiCompatible({ config, text: "Cutia TTS probe", voice: "default" }); console.log(audio.byteLength);'
+```
+
+If you want to verify the route end-to-end from the app directory, run:
+
+```bash
+NODE_ENV=development NEXT_PUBLIC_SITE_URL=http://localhost:3000 UPSTASH_REDIS_REST_URL=http://localhost:8079 UPSTASH_REDIS_REST_TOKEN=cutia_redis_token bun --eval 'import { NextRequest } from "next/server"; import { POST } from "./src/app/api/tts/generate/route.ts"; const request = new NextRequest("http://localhost/api/tts/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: "Cutia route probe", voice: "default" }) }); const response = await POST(request); console.log(response.status); console.log(await response.text());'
+```
+
 To enable authentication, also start PostgreSQL and add these env values:
 
 ```bash
