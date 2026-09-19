@@ -4,6 +4,8 @@ import type { TAction } from "./definitions";
 export type { TAction };
 
 export type TActionArgsMap = {
+	"copy-selected": { event: ClipboardEvent } | undefined;
+	"paste-copied": { files: File[] } | undefined;
 	"seek-forward": { seconds: number } | undefined;
 	"seek-backward": { seconds: number } | undefined;
 	"jump-forward": { seconds: number } | undefined;

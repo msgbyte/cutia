@@ -14,6 +14,7 @@ import { i18next } from "@/lib/i18n";
 import { DEFAULT_EXPORT_OPTIONS } from "@/constants/export-constants";
 import { getExportMimeType, getSelectedClipExportFilename } from "@/lib/export";
 import { extractVideoFrame } from "@/lib/media/processing";
+import { importClipboardImages } from "@/lib/media/clipboard";
 import {
 	buildImageElement,
 	findAvailableVideoTrackAbove,
@@ -288,7 +289,7 @@ export function useEditorActions() {
 
 	useActionHandler(
 		"copy-selected",
-		() => {
+		(args) => {
 			if (selectedElements.length === 0) return;
 
 			const results = editor.timeline.getElementsWithTracks({
@@ -304,6 +305,14 @@ export function useEditorActions() {
 			});
 
 			setClipboard({ items });
+			// Replace any previous clipboard image when copying timeline elements.
+			const text = items.map(({ element }) => element.name).join("\n");
+			if (args?.event.clipboardData) {
+				args.event.clipboardData.setData("text/plain", text);
+				args.event.preventDefault();
+			} else {
+				void navigator.clipboard?.writeText(text).catch(() => undefined);
+			}
 		},
 		undefined,
 	);
@@ -532,7 +541,21 @@ export function useEditorActions() {
 
 	useActionHandler(
 		"paste-copied",
-		() => {
+		(args) => {
+			if (args?.files.some((file) => file.type.startsWith("image/"))) {
+				void importClipboardImages({
+					editor,
+					files: args.files,
+					startTime: editor.playback.getCurrentTime(),
+				}).catch((error) => {
+					toast.error(
+						error instanceof Error
+							? error.message
+							: i18next.t("Failed to import image"),
+					);
+				});
+				return;
+			}
 			if (!clipboard?.items.length) return;
 
 			editor.timeline.pasteAtTime({

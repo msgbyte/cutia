@@ -13,32 +13,15 @@ export function useKeybindingsListener() {
 
 	useEffect(() => {
 		const eventOptions: AddEventListenerOptions = { capture: true };
-		const handleKeyDown = (ev: KeyboardEvent) => {
-			// do not check keybinds if the mode is disabled
-			if (!keybindingsEnabled) {
-				return;
-			}
-			// ignore key events if user is changing keybindings
-			if (isRecording) {
-				return;
-			}
-
-			const binding = getKeybindingString(ev);
-			if (!binding) {
-				return;
-			}
-
-			const boundAction = keybindings[binding];
-			if (!boundAction) {
-				return;
-			}
-
+		const shouldIgnoreEvent = (ev: Event) => {
+			if (!keybindingsEnabled || isRecording || ev.defaultPrevented)
+				return true;
 			const target = ev.target as HTMLElement | null;
 
-			const isInKeybindingFreeZone = target?.closest(
+			const isInKeybindingFreeZone = target?.closest?.(
 				"[data-keybinding-free]",
 			);
-			if (isInKeybindingFreeZone) return;
+			if (isInKeybindingFreeZone) return true;
 
 			const activeElement = document.activeElement;
 			const isTextInput =
@@ -47,11 +30,23 @@ export function useKeybindingsListener() {
 					activeElement.tagName === "TEXTAREA" ||
 					(activeElement as HTMLElement).isContentEditable);
 
-			if (isTextInput) return;
+			if (isTextInput) return true;
 
-			const hasTextSelection =
-				(window.getSelection()?.toString().length ?? 0) > 0;
-			if (hasTextSelection) return;
+			return (window.getSelection()?.toString().length ?? 0) > 0;
+		};
+		const handleKeyDown = (ev: KeyboardEvent) => {
+			if (shouldIgnoreEvent(ev)) return;
+			const binding = getKeybindingString(ev);
+			if (!binding) return;
+			const boundAction = keybindings[binding];
+			if (!boundAction) return;
+
+			// Let the browser provide clipboard data through native copy/paste events.
+			if (
+				(binding === "ctrl+c" && boundAction === "copy-selected") ||
+				(binding === "ctrl+v" && boundAction === "paste-copied")
+			)
+				return;
 
 			ev.preventDefault();
 			ev.stopPropagation();
@@ -73,11 +68,25 @@ export function useKeybindingsListener() {
 					invokeAction(boundAction, undefined, "keypress");
 			}
 		};
+		const handleCopy = (ev: ClipboardEvent) => {
+			if (shouldIgnoreEvent(ev)) return;
+			invokeAction("copy-selected", { event: ev }, "keypress");
+		};
+		const handlePaste = (ev: ClipboardEvent) => {
+			if (shouldIgnoreEvent(ev)) return;
+			const files = Array.from(ev.clipboardData?.files ?? []);
+			ev.preventDefault();
+			invokeAction("paste-copied", { files }, "keypress");
+		};
 
 		document.addEventListener("keydown", handleKeyDown, eventOptions);
+		document.addEventListener("copy", handleCopy, eventOptions);
+		document.addEventListener("paste", handlePaste, eventOptions);
 
 		return () => {
 			document.removeEventListener("keydown", handleKeyDown, eventOptions);
+			document.removeEventListener("copy", handleCopy, eventOptions);
+			document.removeEventListener("paste", handlePaste, eventOptions);
 		};
 	}, [keybindings, getKeybindingString, keybindingsEnabled, isRecording]);
 }
