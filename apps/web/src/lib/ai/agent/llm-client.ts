@@ -26,6 +26,31 @@ export interface ChatCompletionResult {
 	}>;
 }
 
+function normalizeBaseUrl(baseUrl: string) {
+	return (baseUrl || "https://api.openai.com/v1").replace(/\/+$/, "");
+}
+
+function isRelativeBaseUrl(baseUrl: string) {
+	return baseUrl.startsWith("/");
+}
+
+export function getChatCompletionsUrl({
+	baseUrl,
+}: {
+	baseUrl: string;
+}) {
+	const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+
+	if (isRelativeBaseUrl(normalizedBaseUrl)) {
+		return `${normalizedBaseUrl}/chat/completions`;
+	}
+
+	const params = new URLSearchParams({
+		baseUrl: normalizedBaseUrl,
+	});
+	return `/api/ai/agent/chat?${params.toString()}`;
+}
+
 export async function streamChatCompletion({
 	config,
 	messages,
@@ -39,11 +64,7 @@ export async function streamChatCompletion({
 	callbacks: StreamCallbacks;
 	signal?: AbortSignal;
 }): Promise<ChatCompletionResult> {
-	const baseUrl = (config.baseUrl || "https://api.openai.com/v1").replace(
-		/\/+$/,
-		"",
-	);
-	const url = `${baseUrl}/chat/completions`;
+	const url = getChatCompletionsUrl({ baseUrl: config.baseUrl });
 
 	const body: Record<string, unknown> = {
 		model: config.model || "gpt-4.1",
